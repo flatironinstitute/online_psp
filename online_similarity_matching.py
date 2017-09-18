@@ -74,7 +74,7 @@ def OSM_PCA(X, q, lambda_=0, n_epoch=1, U=None, M0=None, W0=None, ysq0=None):
     """
     Parameters:
     ====================
-    X             -- Numpy array of size d-by-n, where each column corresponds to one observation
+    X            -- Numpy array of size d-by-n, where each column corresponds to one observation
     q            -- Dimension of PCA subspace to learn, must satisfy 1 <= q <= d
     lambda_      -- Decorrelation parameter (see Pehlevan et al. NIPS)
     n_epoch      -- Number of epochs for training, i.e., how many times to loop over the columns of X
