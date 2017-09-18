@@ -9,26 +9,24 @@
 import numpy as np
 from scipy.linalg import solve as solve
 import util
-import matplotlib.pyplot as plt
 ##############################
 
 
 def _iterate(X, lambda_, Uhat, n_its, n, q):
-    for t in range(n_its):
+    for t in range(q+1,n_its):
         j       = t % n
         errs[t] = util.subspace_error(Uhat, U)
         x       = X[:,j]
-
+        t      += 1
         for i in range(q):
-            dot_prod   = np.dot(x,Uhat[:,i])
-            v          = n/(n+1) * lambda_[i] * Uhat[:,i] + 1/(n+1) * dot_prod * x
+            v          = (t-1-ell)/t * lambda_[i] * Uhat[:,i] + (1+ell)/t * np.dot(x,Uhat[:,i])* x
             nrm        = np.linalg.norm(v)
             Uhat[:,i]  = v/nrm
             lambda_[i] = nrm
             # Orthogonalize the data against this approximate eigenvector
-            x          = x-dot_prod * Uhat[:,i]
-
-    return Uhat, errs
+            x          = x - np.dot(x,Uhat[:,i]) * Uhat[:,i]
+    # The algorithm dictates an initial guess of the first data point, so the rest is not defined
+    return Uhat
 
 
 def _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, U):
@@ -117,5 +115,3 @@ if __name__ == "__main__":
 
     Uhat,errs = CCIPCA(X, q, n_epoch, U=U[:,:q])
     print('The initial error was %f and the final error was %f.' %(errs[0],errs[-1]))
-    plt.plot(np.log10(errs))
-    plt.show()
