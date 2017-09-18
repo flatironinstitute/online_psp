@@ -127,7 +127,7 @@ def minimax_PCA(X, q, tau=0.5, n_epoch=1, U=None, M0=None, W0=None):
 if __name__ == "__main__":
 
     # Run a test of minimax_PCA
-
+    print("Testing minimax_PCA")
     # Parameters
     n       = 2000
     d       = 10

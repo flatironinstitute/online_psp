@@ -85,7 +85,7 @@ def OSM_PCA(X, q, lambda_=0, n_epoch=1, U=None, M0=None, W0=None, ysq0=None):
 
     Output:
     ====================
-    M    -- Final iterate of the lateral weight matrix, of size q-by-q
+    M    -- Final iterate of the lateral weight matrix, of size q-by-q (this is different than M for minimax_PCA)
     W    -- Final iterate of the forward weight matrix, of size q-by-d
     errs -- The requested evaluation of the subspace error at each step (sometimes)
     """
@@ -124,8 +124,8 @@ def OSM_PCA(X, q, lambda_=0, n_epoch=1, U=None, M0=None, W0=None, ysq0=None):
 
 if __name__ == "__main__":
 
-    # Run a test of minimax_PCA
-
+    # Run a test of OSM_PCA
+    print("Testing OSM_PCA")
     # Parameters
     n       = 2000
     d       = 10

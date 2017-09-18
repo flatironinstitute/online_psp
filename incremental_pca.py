@@ -79,13 +79,12 @@ def incremental_PCA(X, q, n_epoch=1, tol=1e-7, f=None, U=None, Uhat0=None, lambd
     n_epoch      -- Number of epochs for training, i.e., how many times to loop over the columns of X
     f            -- Forgetting factor f, a number in (0,1)
     U            -- The true PCA basis for error checks, or None to avoid calculation altogether
-    Uhat0           -- Initial guess for the eigenspace matrix U, must be of size d-by-q
+    Uhat0        -- Initial guess for the eigenspace matrix U, must be of size d-by-q
     lambda0      -- Initial guess for the eigenvalues vector lambda_, must be of size q
 
     Output:
     ====================
-    M    -- Final iterate of the lateral weight matrix, of size q-by-q
-    W    -- Final iterate of the forward weight matrix, of size q-by-d
+    Uhat -- Final iterate of the eigenspace matrix, of size d-by-q
     errs -- The requested evaluation of the subspace error at each step (sometimes)
     """
 
@@ -123,7 +122,7 @@ def incremental_PCA(X, q, n_epoch=1, tol=1e-7, f=None, U=None, Uhat0=None, lambd
 if __name__ == "__main__":
 
     # Run a test of incremental_PCA
-
+    print("Testing incremental_PCA")
     # Parameters
     n       = 2000
     d       = 10
