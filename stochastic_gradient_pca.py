@@ -42,7 +42,7 @@ def _iterate(X, Uhat, n_its, n, q):
         Uhat = Uhat + eta(t) * Z*phi
 
 
-    return Uhat,errs
+    return Uhat
 
 
 
@@ -92,7 +92,7 @@ def SGA_PCA(X, q, n_epoch=1, U=None, Uhat0=None):
     d,n = X.shape
 
     if Uhat0 is not None:
-        assert Uhat0.shape == (q,d), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d,q)
+        assert Uhat0.shape == (d,q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d,q)
         Uhat = Uhat0
     else:
         Uhat = np.random.normal(0, 1.0/np.sqrt(d), size=(d,q))

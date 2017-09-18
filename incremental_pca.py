@@ -22,7 +22,7 @@ def _iterate(X, lambda_, Uhat, tol, f, n_its, n, q):
         # Project X into current estimate and check residual error
         Uhatx    = Uhat.T.dot(x)
         x        = x - Uhat.dot(Uhatx);
-        normx    = np.linalg.norm(x)
+        normx    = np.sqrt(x.dot(x))#np.linalg.norm(x)
 
         if (normx >= tol):
             lambda_  = np.concatenate((lambda_, [0]))
@@ -30,14 +30,13 @@ def _iterate(X, lambda_, Uhat, tol, f, n_its, n, q):
             Uhat     = np.concatenate((Uhat, np.atleast_2d(x.T).T / normx),1)
 
         # Get new eigenvectors, is this possibly fast at all?
-        d,V     = np.linalg.eig(np.diag(lambda_) + np.outer(Uhatx,Uhatx.T))
+        d,V     = np.linalg.eigh(np.diag(lambda_) + np.outer(Uhatx,Uhatx.T))
         idx     = np.flip(np.argsort(d),0)
         lambda_ = d[idx]
         V       = V[:,idx]
         lambda_ = lambda_[:q]
         Uhat    = Uhat.dot(V[:,:q])
     return Uhat
-
 
 def _iterate_and_compute_errors(X, lambda_, Uhat, tol, f, n_its, n, q, U):
     errs = np.zeros(n_its)
@@ -51,7 +50,7 @@ def _iterate_and_compute_errors(X, lambda_, Uhat, tol, f, n_its, n, q, U):
         # Project X into current estimate and check residual error
         Uhatx    = Uhat.T.dot(x)
         x        = x - Uhat.dot(Uhatx);
-        normx    = np.linalg.norm(x)
+        normx    = np.sqrt(x.dot(x)) #np.linalg.norm(x)
 
         if (normx >= tol):
             lambda_  = np.concatenate((lambda_, [0]))
@@ -59,7 +58,7 @@ def _iterate_and_compute_errors(X, lambda_, Uhat, tol, f, n_its, n, q, U):
             Uhat     = np.concatenate((Uhat, np.atleast_2d(x.T).T / normx),1)
 
         # Get new eigenvectors, is this possibly fast at all?
-        d,V     = np.linalg.eig(np.diag(lambda_) + np.outer(Uhatx,Uhatx.T))
+        d,V     = np.linalg.eigh(np.diag(lambda_) + np.outer(Uhatx,Uhatx.T))
         idx     = np.flip(np.argsort(d),0)
         lambda_ = d[idx]
         V       = V[:,idx]

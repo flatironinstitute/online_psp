@@ -12,39 +12,34 @@ import util
 ##############################
 
 
-def _iterate(X, lambda_, Uhat, n_its, n, q):
-    for t in range(q+1,n_its):
+def _iterate(X, lambda_, Uhat, ell, n_its, n, q):
+    for t in range(q,n_its):
         j       = t % n
-        errs[t] = util.subspace_error(Uhat, U)
         x       = X[:,j]
-        t      += 1
         for i in range(q):
-            v          = (t-1-ell)/t * lambda_[i] * Uhat[:,i] + (1+ell)/t * np.dot(x,Uhat[:,i])* x
-            nrm        = np.linalg.norm(v)
-            Uhat[:,i]  = v/nrm
-            lambda_[i] = nrm
+            v          = (t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x
+            lambda_[i] = np.sqrt(v.dot(v))#np.linalg.norm(v)
+            Uhat[:,i]  = v/lambda_[i]
             # Orthogonalize the data against this approximate eigenvector
             x          = x - np.dot(x,Uhat[:,i]) * Uhat[:,i]
-    # The algorithm dictates an initial guess of the first data point, so the rest is not defined
-    return Uhat
 
+    return Uhat
 
 def _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, U):
     errs = np.zeros(n_its)
-    for t in range(q+1,n_its):
+    for t in range(q,n_its):
         j       = t % n
         errs[t] = util.subspace_error(Uhat, U)
         x       = X[:,j]
-        t      += 1
         for i in range(q):
-            v          = (t-1-ell)/t * lambda_[i] * Uhat[:,i] + (1+ell)/t * np.dot(x,Uhat[:,i])* x
-            nrm        = np.linalg.norm(v)
-            Uhat[:,i]  = v/nrm
-            lambda_[i] = nrm
+            v          = (t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x
+            lambda_[i] = np.sqrt(v.dot(v))#np.linalg.norm(v)
+            Uhat[:,i]  = v/lambda_[i]
             # Orthogonalize the data against this approximate eigenvector
             x          = x - np.dot(x,Uhat[:,i]) * Uhat[:,i]
+
     # The algorithm dictates an initial guess of the first data point, so the rest is not defined
-    errs[:q+1] = errs[q+1]
+    errs[:q+1] = errs[q]
     return Uhat, errs
 
 
@@ -76,7 +71,7 @@ def CCIPCA(X, q, n_epoch=1, U=None, Uhat0=None, lambda0=None, ell=2):
         Uhat = Uhat0
     else:
         # Check me
-        Uhat = X[:,:q]#np.eye(d,q)
+        Uhat = X[:,:q].copy()
 
     if lambda0 is not None:
         assert lambda0.shape == (q,d), "The shape of the initial guess lambda0 must be (q,)=(%d,)" % (q)
