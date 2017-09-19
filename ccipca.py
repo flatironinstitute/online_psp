@@ -25,11 +25,21 @@ def _iterate(X, lambda_, Uhat, ell, n_its, n, q):
 
     return Uhat
 
-def _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, U):
-    errs = np.zeros(n_its)
+def _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, U, V):
+    if U is not None:
+        errsU = np.zeros(n_its)
+    if V is not None:
+        errsV = np.zeros(n_its)
+
     for t in range(q,n_its):
         j       = t % n
-        errs[t] = util.subspace_error(Uhat, U)
+
+        if U is not None:
+            errsU[t] = util.subspace_error(Uhat, U)
+
+        if V is not None:
+            errsV[t] = util.subspace_error(Uhat, V)
+            
         x       = X[:,j]
         for i in range(q):
             v          = (t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x
@@ -39,11 +49,20 @@ def _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, U):
             x          = x - np.dot(x,Uhat[:,i]) * Uhat[:,i]
 
     # The algorithm dictates an initial guess of the first data point, so the rest is not defined
-    errs[:q+1] = errs[q]
-    return Uhat, errs
+    if U is not None:
+        errsU[:q+1] = errsU[q]
+    if V is not None:
+        errsV[:q+1] = errsV[q]
+
+    if U is not None and V is not None:
+        return errsU,errs
+    elif U is not None:
+        return errsU
+    elif V is not None:
+        return errsV
 
 
-def CCIPCA(X, q, n_epoch=1, U=None, Uhat0=None, lambda0=None, ell=2):
+def CCIPCA(X, q, n_epoch=1, U=None, V=None, Uhat0=None, lambda0=None, ell=2):
 
     """
     Parameters:
@@ -51,7 +70,8 @@ def CCIPCA(X, q, n_epoch=1, U=None, Uhat0=None, lambda0=None, ell=2):
     X            -- Numpy array of size d-by-n, where each column corresponds to one observation
     q            -- Dimension of PCA subspace to learn, must satisfy 1 <= q <= d
     n_epoch      -- Number of epochs for training, i.e., how many times to loop over the columns of X
-    U            -- The true PCA basis for error checks, or None to avoid calculation altogether
+    U            -- The population PCA basis for error checks, or None to avoid calculation altogether
+    V            -- The sample PCA basis for error checks, or None to avoid calculation altogether
     Uhat0        -- Initial guess for the eigenspace matrix U, must be of size d-by-q
     lambda0      -- Initial guess for the eigenvalues vector lambda_, must be of size q
     ell          -- Amnesiac parameter (see reference)
@@ -82,8 +102,12 @@ def CCIPCA(X, q, n_epoch=1, U=None, Uhat0=None, lambda0=None, ell=2):
     n_its = n_epoch * n
 
     if U is not None:
-        assert U.shape == (d,q), "The shape of the PCA subspace basis matrix must be (d,q)=(%d,%d)" % (d,q)
-        return _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, U)
+        assert U.shape == (d,q), "The shape of the PCA subspace basis matrix U must be (d,q)=(%d,%d)" % (d,q)
+    if V is not None:
+        assert V.shape == (d,q), "The shape of the PCA subspace basis matrix V must be (d,q)=(%d,%d)" % (d,q)
+
+    if U is not None or V is not None:
+        return _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, U, V)
     else:
         return _iterate(X, lambda_, Uhat, ell, n_its, n, q)
 

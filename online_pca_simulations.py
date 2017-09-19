@@ -51,28 +51,34 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     compute_error = any(error_options)
 
     # TODO: What do we do if we don't have a population matrix?
+    #if error_options['compute_population_error']:
     X,U,lambda_ = util.generate_samples(d, q, n, generator_options)
-
-    if error_options['compute_population_error']:
-        error_options['population_PCA_vectors'] = U[:,:q]
+    U = U[:,:q]
+    if not error_options['compute_population_error']:
+        U = None
+    #else:
+        #X = util.generate_samples(d, q, n, generator_options)
+        #U = None
 
     if error_options['compute_batch_error']:
         eig_val,V = np.linalg.eigh(X.dot(X.T) / n)
         idx       = np.flip(np.argsort(eig_val),0)
         eig_val   = eig_val[idx]
-        V          = V[:,idx]
+        V         = V[:,idx]
+        V         = V[:,:q]
+    else:
+        V = None
 
-        error_options['batch_PCA_vectors'] = V[:,:q]
 
-    # TODO: REMOVE ME
-    #U = V[:,:q]
+
+
 
     pca_algorithm = algorithm_options['pca_algorithm']
 
 
     if pca_algorithm == 'CCIPCA':
         if compute_error:
-            _,errs = CCIPCA(X[:,n0:], q, n_epoch, U)
+            errs = CCIPCA(X[:,n0:], q, n_epoch, U, V)
         else:
             with Timer() as t:
                 *_, = CCIPCA(X[:,n0:], q, n_epoch)
@@ -93,14 +99,14 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     elif pca_algorithm == 'minimax_PCA':
         tau = algorithm_options['tau']
         if compute_error:
-            _,_,errs = minimax_PCA(X[:,n0:], q, tau, n_epoch, U)
+            errs = minimax_PCA(X[:,n0:], q, tau, n_epoch, U, V)
         else:
             *_, = minimax_PCA(X[:,n0:], q, tau, n_epoch)
 
     elif pca_algorithm == 'if_minimax_PCA':
         tau = algorithm_options['tau']
         if compute_error:
-            _,_,errs = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, U)
+            errs = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, U, V)
         else:
             with Timer() as t:
                 *_, = if_minimax_PCA(X[:,n0:], q, tau, n_epoch)
@@ -124,9 +130,9 @@ if __name__ == "__main__":
 
     error_options = defaultdict(int, {
         #'subspace_error' : True,
-        #'n_skip' : 128,
-        #'ortho' : False,
-        #'compute_batch_error' : True,
+        'n_skip' : 128,
+        'ortho' : False,
+        'compute_batch_error' : True,
         #'compute_population_error' : True
     })
 
@@ -147,7 +153,7 @@ if __name__ == "__main__":
     })
 
     algorithm_options = defaultdict(int, {
-        'pca_algorithm' : 'if_minimax_PCA',
+        'pca_algorithm' : 'CCIPCA',#'if_minimax_PCA',
         'tau'           : 0.5
     })
 

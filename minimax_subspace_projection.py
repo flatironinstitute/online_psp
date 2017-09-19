@@ -48,13 +48,20 @@ def _iterate(X, M, W, tau, n_its, n):
 
 
 
-def _iterate_and_compute_errors(X, M, W, tau, n_its, n, U):
-    errs = np.zeros(n_its)
+def _iterate_and_compute_errors(X, M, W, tau, n_its, n, U, V):
+    if U is not None:
+        errsU = np.zeros(n_its)
+    if V is not None:
+        errsV = np.zeros(n_its)
 
     for t in range(n_its):
         # Record error
         Uhat = solve(M, W).T
-        errs[t] = util.subspace_error(Uhat, U)
+        if U is not None:
+            errsU[t] = util.subspace_error(Uhat, U)
+
+        if V is not None:
+            errsV[t] = util.subspace_error(Uhat, V)
 
         # Neural dynamics, short-circuited to the steady-state solution
         j = t % n
@@ -70,12 +77,17 @@ def _iterate_and_compute_errors(X, M, W, tau, n_its, n, U):
         step = step/tau
         M    = (1-step) * M + step * np.outer(y,y)
 
-    return M,W,errs
+    if U is not None and V is not None:
+        return errsU,errs
+    elif U is not None:
+        return errsU
+    elif V is not None:
+        return errsV
 
 
 
 
-def minimax_PCA(X, q, tau=0.5, n_epoch=1, U=None, M0=None, W0=None):
+def minimax_PCA(X, q, tau=0.5, n_epoch=1, U=None, V = None, M0=None, W0=None):
 
     """
     Parameters:
@@ -84,14 +96,15 @@ def minimax_PCA(X, q, tau=0.5, n_epoch=1, U=None, M0=None, W0=None):
     q            -- Dimension of PCA subspace to learn, must satisfy 1 <= q <= d
     tau          -- Learning rate scale parameter for M vs W (see Pehlevan et al.)
     n_epoch      -- Number of epochs for training, i.e., how many times to loop over the columns of X
-    U            -- The true PCA basis for error checks, or None to avoid calculation altogether
+    U            -- The population PCA basis for error checks, or None to avoid calculation altogether
+    V            -- The sample PCA basis for error checks, or None to avoid calculation altogether
     M0           -- Initial guess for the lateral weight matrix M, must be of size q-by-q
     W0           -- Initial guess for the forward weight matrix W, must be of size q-by-d
 
     Output:
     ====================
-    M    -- Final iterate of the lateral weight matrix, of size q-by-q
-    W    -- Final iterate of the forward weight matrix, of size q-by-d
+    M    -- Final iterate of the lateral weight matrix, of size q-by-q (sometimes)
+    W    -- Final iterate of the forward weight matrix, of size q-by-d (sometimes)
     errs -- The requested evaluation of the subspace error at each step (sometimes)
     """
 
@@ -113,12 +126,14 @@ def minimax_PCA(X, q, tau=0.5, n_epoch=1, U=None, M0=None, W0=None):
     n_its = n_epoch * n
 
     if U is not None:
-        assert U.shape == (d,q), "The shape of the PCA subspace basis matrix must be (d,q)=(%d,%d)" % (d,q)
-        return _iterate_and_compute_errors(X, M, W, tau, n_its, n, U)
+        assert U.shape == (d,q), "The shape of the PCA subspace basis matrix U must be (d,q)=(%d,%d)" % (d,q)
+    if V is not None:
+        assert V.shape == (d,q), "The shape of the PCA subspace basis matrix V must be (d,q)=(%d,%d)" % (d,q)
+
+    if U is not None or V is not None:
+        return _iterate_and_compute_errors(X, M, W, tau, n_its, n, U, V)
     else:
         return _iterate(X, M, W, tau, n_its, n)
-
-
 
 
 
