@@ -200,17 +200,17 @@ if __name__ == "__main__":
 
     error_options = {
         #'n_skip' : 128, ##NOT IMPLEMENTED
-        #'orthogonalize_iterate' : False,
-        #'compute_batch_error' : True,
-        #'compute_population_error' : True,
-        #'compute_strain_error' : True,
-        #'compute_reconstruction_error' : True
+        # 'orthogonalize_iterate' : False,
+        # 'compute_batch_error' : True,
+        # 'compute_population_error' : True,
+        # 'compute_strain_error' : True,
+        # 'compute_reconstruction_error' : True
     }
 
     simulation_options = {
-        'd' : 16,
-        'q' : 2,
-        'n' : 2048,
+        'd' : 1000,
+        'q' : 500,
+        'n' : 2000,
         'n0': 0, ##NOT IMPLEMENTED
         'n_epoch': 10,
         'n_test' : 256,
@@ -225,7 +225,7 @@ if __name__ == "__main__":
     }
 
     algorithm_options = {
-        'pca_algorithm' : algo_names[3],
+        'pca_algorithm' : algo_names[2],
         'tau'           : 0.5,
         'tol'           : 1e-7
     }
@@ -236,13 +236,14 @@ if __name__ == "__main__":
         handles = []
 
         plt.figure(1)
-        plt.title(algorithm_options['pca_algorithm'])
         plt.subplot(211)
+        plt.title(algorithm_options['pca_algorithm'])
         for err_name in errs:
             if err_name in ['batch_err', 'population_err']:
                 handle, = plt.plot(np.log10(errs[err_name]), label=err_name)
                 handles.append(handle)
         plt.legend(handles=handles)
+        plt.ylabel('Error (log10 scale)')
 
         handles = []
         plt.subplot(212)
@@ -251,4 +252,6 @@ if __name__ == "__main__":
                 handle, = plt.plot(errs[err_name], label=err_name)
                 handles.append(handle)
         plt.legend(handles=handles)
+        plt.ylabel('Error (linear scale)')
+        plt.xlabel('Iteration')
         plt.show()
