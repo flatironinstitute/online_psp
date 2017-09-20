@@ -35,7 +35,7 @@ def _iterate(X, M, W, ysq, lambda_, n_its, n, q):
         # Set diagonal to zero
         np.fill_diagonal(M, 0)
 
-    return M,W,errs
+    return M,W
 
 
 

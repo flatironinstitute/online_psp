@@ -7,7 +7,9 @@
 ##############################
 # Imports
 import numpy as np
+import scipy.io as sio
 from scipy.linalg import solve as solve
+import os
 import util
 import time
 
@@ -42,7 +44,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     # Different types of error to compute:
     # - The relative Frobenius norm error ||UU' - UhatUhat'||_F / q, relative to either the population PCA or the sample PCA
     # - The relative strain cost function (on some test data)  ||X'X - Y'Y||_F / ||X'X||_F
-    # - The relative reconstruction error (of some test data) ||X - UU'X||_F / ||X||_F
+    # - The mean relative reconstruction error (of some test data) mean(||X[:,i] - UU'X[:,i]||_2 / ||X[:,i]||_2)
     ######NOT IMPLEMENTED######## - Compare the iterate to the sample PCA of all data up to the current data point (online)
     #######NOT IMPLEMENTED ###### - Compare the sample PCA of the data to the population PCA of the data (discrepancy)
 
@@ -77,8 +79,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     X       = data['X'][:,:n]
     Xtest   = data['X'][:,n:]
     XXtest  = Xtest.T.dot(Xtest)
-    Xtest  /= np.linalg.norm(Xtest, 'fro')
-    XXtest /= np.linalg.norm(XXtest, 'fro')
+    normsXtest   = np.sum(np.abs(Xtest)**2,0)**0.5#np.linalg.norm(Xtest, 'fro')
+    normsXXtest  = np.linalg.norm(XXtest, 'fro')
 
     if error_options['compute_population_error']:
         U_pop = data['U']
@@ -93,10 +95,10 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         error_options['error_func_list'].append(('batch_err', lambda Uhat: util.subspace_error(Uhat, U_batch)))
 
     if error_options['compute_strain_error']:
-        error_options['error_func_list'].append(('strain_err', lambda Uhat: util.strain_error(Uhat.T.dot(Xtest), XXtest)))
+        error_options['error_func_list'].append(('strain_err', lambda Uhat: util.strain_error(Uhat.T.dot(Xtest), XXtest, normsXXtest)))
 
     if error_options['compute_reconstruction_error']:
-        error_options['error_func_list'].append(('recon_err', lambda Uhat: util.reconstruction_error(Uhat, Xtest)))
+        error_options['error_func_list'].append(('recon_err', lambda Uhat: util.reconstruction_error(Uhat, Xtest, normsXtest)))
 
 
 # Main chunk of the code follows: run the appropriate algorithm
@@ -157,31 +159,59 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
                 *_, = OSM_PCA(X[:,n0:], q, lambda_, n_epoch)
             print('OSM_PCA took %f sec.' % t.interval)
 
-    #TODO: REMOVE ME
+    filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_n0_%d_ntest_%d' %(pca_algorithm, d, q, n, n_epoch, n0, n_test)
+    if compute_error:
+        filename += '_error'
+    else:
+        filename += '_timing'
+    filename += '.mat'
+
+    output_dict = {
+    'generator_options' : generator_options,
+    'simulation_options' : simulation_options,
+    'algorithm_options' : algorithm_options,
+    'd' : d,
+    'q' : q,
+    'n' : n,
+    'n_epoch' : n_epoch,
+    'n0' : n0,
+    'n_test' : n_test
+    }
+
+    if compute_error:
+        output_dict['errs'] = errs
+    else:
+        output_dict['runtime'] = t.interval
+
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    sio.savemat(filename, output_dict)
+    print('Output written to %s' % filename)
+
     if compute_error:
         return errs
+    else:
+        return t.interval
 
 
 if __name__ == "__main__":
 
     algo_names = ['SGA_PCA', 'incremental_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
-    output_folder = "/dev/null"
+    output_folder = os.getcwd() + '/test'
 
     error_options = {
-        #'subspace_error' : True,
-        'n_skip' : 128,
-        'orthogonalize_iterate' : False,
-        'compute_batch_error' : True,
-        'compute_population_error' : True,
-        'compute_strain_error' : True,
-        'compute_reconstruction_error' : True
+        #'n_skip' : 128, ##NOT IMPLEMENTED
+        #'orthogonalize_iterate' : False,
+        #'compute_batch_error' : True,
+        #'compute_population_error' : True,
+        #'compute_strain_error' : True,
+        #'compute_reconstruction_error' : True
     }
 
     simulation_options = {
-        'd' : 100,
-        'q' : 4,
-        'n' : 2000,
-        'n0': 0,
+        'd' : 16,
+        'q' : 2,
+        'n' : 2048,
+        'n0': 0, ##NOT IMPLEMENTED
         'n_epoch': 10,
         'n_test' : 256,
         'error_options' : error_options
@@ -195,17 +225,30 @@ if __name__ == "__main__":
     }
 
     algorithm_options = {
-        'pca_algorithm' : algo_names[-1],
+        'pca_algorithm' : algo_names[3],
         'tau'           : 0.5,
         'tol'           : 1e-7
     }
 
     errs = run_simulation(output_folder, simulation_options, generator_options, algorithm_options)
-    handles = []
-    for err_name in errs:
-        handle, = plt.plot(np.log10(errs[err_name]), label=err_name)
-        handles.append(handle)
 
-    plt.legend(handles=handles)
-    plt.title(algorithm_options['pca_algorithm'])
-    plt.show()
+    if any(error_options):
+        handles = []
+
+        plt.figure(1)
+        plt.title(algorithm_options['pca_algorithm'])
+        plt.subplot(211)
+        for err_name in errs:
+            if err_name in ['batch_err', 'population_err']:
+                handle, = plt.plot(np.log10(errs[err_name]), label=err_name)
+                handles.append(handle)
+        plt.legend(handles=handles)
+
+        handles = []
+        plt.subplot(212)
+        for err_name in errs:
+            if err_name in ['strain_err', 'recon_err']:
+                handle, = plt.plot(errs[err_name], label=err_name)
+                handles.append(handle)
+        plt.legend(handles=handles)
+        plt.show()

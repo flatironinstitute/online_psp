@@ -43,11 +43,14 @@ def subspace_error(Uhat, U, relative_error_flag=True):
     #return np.linalg.norm(np.dot(Uhat, Uhat.T) - np.dot(U, U.T), ord='fro')
 
 
-def reconstruction_error(Uhat, X):
-    return np.linalg.norm(X - Uhat.dot(Uhat.T.dot(X)), 'fro')
+def reconstruction_error(Uhat, X, normsX):
+	res = X - Uhat.dot(Uhat.T.dot(X))
+	res_norms = np.sum(np.abs(res)**2,0)**0.5
+	return np.mean(res_norms / normsX)
+    #return np.linalg.norm(X - Uhat.dot(Uhat.T.dot(X)), 'fro') / normX
 
-def strain_error(Y, XX):
-    return np.linalg.norm(Y.T.dot(Y) - XX, 'fro')
+def strain_error(Y, XX, normXX):
+    return np.linalg.norm(Y.T.dot(Y) - XX, 'fro') / normXX
 
 
 def generate_samples(d, q, n, options):
