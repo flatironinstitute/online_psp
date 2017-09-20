@@ -39,13 +39,13 @@ def _iterate(X, M, W, ysq, lambda_, n_its, n, q):
 
 
 
-def _iterate_and_compute_errors(X, M, W, ysq, lambda_, n_its, n, q, U):
-    errs = np.zeros(n_its)
+def _iterate_and_compute_errors(X, M, W, ysq, lambda_, n_its, n, q, error_options):
+    errs = util.initialize_errors(error_options, n_its)
     for t in range(n_its):
         j = t % n
         # Record error
         Uhat = solve(np.eye(q) + M, W).T
-        errs[t] = util.subspace_error(Uhat, U)
+        util.compute_errors(error_options, Uhat, t, errs)
 
         # Steady-state of neural dynamics
         y   = solve((np.eye(q)+M), W.dot(X[:,j]))
@@ -66,27 +66,27 @@ def _iterate_and_compute_errors(X, M, W, ysq, lambda_, n_its, n, q, U):
         # Set diagonal to zero
         np.fill_diagonal(M, 0)
 
-    return M,W,errs
+    return errs
 
 
-def OSM_PCA(X, q, lambda_=0, n_epoch=1, U=None, M0=None, W0=None, ysq0=None):
+def OSM_PCA(X, q, lambda_=0, n_epoch=1, error_options=None, M0=None, W0=None, ysq0=None):
 
     """
     Parameters:
     ====================
-    X            -- Numpy array of size d-by-n, where each column corresponds to one observation
-    q            -- Dimension of PCA subspace to learn, must satisfy 1 <= q <= d
-    lambda_      -- Decorrelation parameter (see Pehlevan et al. NIPS)
-    n_epoch      -- Number of epochs for training, i.e., how many times to loop over the columns of X
-    U            -- The true PCA basis for error checks, or None to avoid calculation altogether
-    M0           -- Initial guess for the lateral weight matrix M, must be of size q-by-q
-    W0           -- Initial guess for the forward weight matrix W, must be of size q-by-d
-    ysq0         -- Initial guess for the squared activity level ysk, must be of size q
+    X             -- Numpy array of size d-by-n, where each column corresponds to one observation
+    q             -- Dimension of PCA subspace to learn, must satisfy 1 <= q <= d
+    lambda_       -- Decorrelation parameter (see Pehlevan et al. NIPS)
+    n_epoch       -- Number of epochs for training, i.e., how many times to loop over the columns of X
+    error_options -- A struct with options for computing errors
+    M0            -- Initial guess for the lateral weight matrix M, must be of size q-by-q
+    W0            -- Initial guess for the forward weight matrix W, must be of size q-by-d
+    ysq0          -- Initial guess for the squared activity level ysk, must be of size q
 
     Output:
     ====================
-    M    -- Final iterate of the lateral weight matrix, of size q-by-q (this is different than M for minimax_PCA)
-    W    -- Final iterate of the forward weight matrix, of size q-by-d
+    M    -- Final iterate of the lateral weight matrix, of size q-by-q (this is different than M for minimax_PCA) (sometimes)
+    W    -- Final iterate of the forward weight matrix, of size q-by-d (sometimes)
     errs -- The requested evaluation of the subspace error at each step (sometimes)
     """
 
@@ -114,33 +114,32 @@ def OSM_PCA(X, q, lambda_=0, n_epoch=1, U=None, M0=None, W0=None, ysq0=None):
 
     n_its = n_epoch * n
 
-    if U is not None:
-        assert U.shape == (d,q), "The shape of the PCA subspace basis matrix must be (d,q)=(%d,%d)" % (d,q)
-        return _iterate_and_compute_errors(X, M, W, ysq, lambda_, n_its, n, q, U)
+    if error_options is not None:
+        return _iterate_and_compute_errors(X, M, W, ysq, lambda_, n_its, n, q, error_options)
     else:
         return _iterate(X, M, W, ysq, lambda_, n_its, n, q)
 
 
-
-if __name__ == "__main__":
-
-    # Run a test of OSM_PCA
-    print("Testing OSM_PCA")
-    # Parameters
-    n       = 2000
-    d       = 10
-    q       = 3     # Value of q is technically hard-coded below, sorry
-    n_epoch = 10
-    lambda_ = 0
-
-    X     = np.random.normal(0,1,(d,n))
-    # Note: Numpy SVD returns V transpose
-    U,s,Vt = np.linalg.svd(X, full_matrices=False)
-
-    s = np.concatenate( ([np.sqrt(3),np.sqrt(2),1], 1e-1*np.random.random(d-3)))
-    D = np.diag(np.sqrt(n) * s )
-
-    X = np.dot(U, np.dot(D, Vt))
-
-    M,W,errs = OSM_PCA(X, q, lambda_, n_epoch, U=U[:,:q])
-    print('The initial error was %f and the final error was %f.' %(errs[0],errs[-1]))
+#
+# if __name__ == "__main__":
+#
+#     # Run a test of OSM_PCA
+#     print("Testing OSM_PCA")
+#     # Parameters
+#     n       = 2000
+#     d       = 10
+#     q       = 3     # Value of q is technically hard-coded below, sorry
+#     n_epoch = 10
+#     lambda_ = 0
+#
+#     X     = np.random.normal(0,1,(d,n))
+#     # Note: Numpy SVD returns V transpose
+#     U,s,Vt = np.linalg.svd(X, full_matrices=False)
+#
+#     s = np.concatenate( ([np.sqrt(3),np.sqrt(2),1], 1e-1*np.random.random(d-3)))
+#     D = np.diag(np.sqrt(n) * s )
+#
+#     X = np.dot(U, np.dot(D, Vt))
+#
+#     M,W,errs = OSM_PCA(X, q, lambda_, n_epoch, U=U[:,:q])
+#     print('The initial error was %f and the final error was %f.' %(errs[0],errs[-1]))

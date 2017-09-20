@@ -47,13 +47,13 @@ def _iterate(X, Uhat, n_its, n, q):
 
 
 
-def _iterate_and_compute_errors(X, Uhat, n_its, n, q, U):
-    errs = np.zeros(n_its)
+def _iterate_and_compute_errors(X, Uhat, n_its, n, q, error_options):
+    errs = util.initialize_errors(error_options, n_its)
 
     A = np.triu(np.ones((q,q)), 1)
     for t in range(n_its):
         # Record error
-        errs[t] = util.subspace_error(Uhat, U)
+        util.compute_errors(error_options, Uhat, t, errs)
 
         j    = t % n
 
@@ -67,25 +67,25 @@ def _iterate_and_compute_errors(X, Uhat, n_its, n, q, U):
         Uhat = Uhat + eta(t) * Z*phi
 
 
-    return Uhat,errs
+    return errs
 
 
 
 
-def SGA_PCA(X, q, n_epoch=1, U=None, Uhat0=None):
+def SGA_PCA(X, q, n_epoch=1, error_options=None, Uhat0=None):
 
     """
     Parameters:
     ====================
-    X            -- Numpy array of size d-by-n, where each column corresponds to one observation
-    q            -- Dimension of PCA subspace to learn, must satisfy 1 <= q <= d
-    n_epoch      -- Number of epochs for training, i.e., how many times to loop over the columns of X
-    U            -- The true PCA basis for error checks, or None to avoid calculation altogether
-    Uhat0        -- Initial guess for the eigenspace matrix of size d-by-q
+    X             -- Numpy array of size d-by-n, where each column corresponds to one observation
+    q             -- Dimension of PCA subspace to learn, must satisfy 1 <= q <= d
+    n_epoch       -- Number of epochs for training, i.e., how many times to loop over the columns of X
+    error_options -- A struct with options for computing errors
+    Uhat0         -- Initial guess for the eigenspace matrix of size d-by-q
 
     Output:
     ====================
-    Uhat -- Final iterate of the eigenspace matrix, of size d-by-q
+    Uhat -- Final iterate of the eigenspace matrix, of size d-by-q (sometimes)
     errs -- The requested evaluation of the subspace error at each step (sometimes)
     """
 
@@ -100,9 +100,8 @@ def SGA_PCA(X, q, n_epoch=1, U=None, Uhat0=None):
 
     n_its = n_epoch * n
 
-    if U is not None:
-        assert U.shape == (d,q), "The shape of the PCA subspace basis matrix must be (d,q)=(%d,%d)" % (d,q)
-        return _iterate_and_compute_errors(X, Uhat, n_its, n, q, U)
+    if error_options is not None:
+        return _iterate_and_compute_errors(X, Uhat, n_its, n, q, error_options)
     else:
         return _iterate(X, Uhat, n_its, n, q)
 
@@ -111,27 +110,27 @@ def SGA_PCA(X, q, n_epoch=1, U=None, Uhat0=None):
 
 
 
-
-if __name__ == "__main__":
-
-    # Run a test of SGA_PCA
-    print("Testing SGA_PCA")
-    # Parameters
-    n       = 2000
-    d       = 10
-    q       = 3     # Value of q is technically hard-coded below, sorry
-    n_epoch = 10
-
-    X     = np.random.normal(0,1,(d,n))
-    # Note: Numpy SVD returns V transpose
-    U,s,Vt = np.linalg.svd(X, full_matrices=False)
-
-    s = np.concatenate( ([np.sqrt(3),np.sqrt(2),1], 1e-1*np.random.random(d-3)))
-    D = np.diag(np.sqrt(n) * s )
-
-    X = np.dot(U, np.dot(D, Vt))
-
-    Uhat,errs = SGA_PCA(X, q, n_epoch, U=U[:,:q])
-    print('The initial error was %f and the final error was %f.' %(errs[0],errs[-1]))
-    # plt.plot(np.log10(errs))
-    # plt.show()
+#
+# if __name__ == "__main__":
+#
+#     # Run a test of SGA_PCA
+#     print("Testing SGA_PCA")
+#     # Parameters
+#     n       = 2000
+#     d       = 10
+#     q       = 3     # Value of q is technically hard-coded below, sorry
+#     n_epoch = 10
+#
+#     X     = np.random.normal(0,1,(d,n))
+#     # Note: Numpy SVD returns V transpose
+#     U,s,Vt = np.linalg.svd(X, full_matrices=False)
+#
+#     s = np.concatenate( ([np.sqrt(3),np.sqrt(2),1], 1e-1*np.random.random(d-3)))
+#     D = np.diag(np.sqrt(n) * s )
+#
+#     X = np.dot(U, np.dot(D, Vt))
+#
+#     Uhat,errs = SGA_PCA(X, q, n_epoch, U=U[:,:q])
+#     print('The initial error was %f and the final error was %f.' %(errs[0],errs[-1]))
+#     # plt.plot(np.log10(errs))
+#     # plt.show()
