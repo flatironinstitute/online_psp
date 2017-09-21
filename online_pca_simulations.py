@@ -13,6 +13,8 @@ import os
 import util
 import time
 
+from if_minimax_subspace_whitening import if_minimax_whitening_PCA
+from minimax_subspace_whitening import minimax_whitening_PCA
 from minimax_subspace_projection import minimax_PCA
 from if_minimax_subspace_projection import if_minimax_PCA
 from ccipca import CCIPCA
@@ -59,6 +61,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     n_test  = simulation_options['n_test']
 
 
+    pca_algorithm = algorithm_options['pca_algorithm']
+
     # We wrap things in a default dict so we don't have to check if keys exist
     error_options = defaultdict(int, simulation_options['error_options'])
     compute_error = any(error_options)
@@ -70,7 +74,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
     generator_options = generator_options.copy()
 
-    if error_options['compute_population_error']:
+    if error_options['compute_population_error'] or error_options['compute_pop_whitening_error']:
         generator_options['return_U'] = True
     else:
         generator_options['return_U'] = False
@@ -101,11 +105,24 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     if error_options['compute_reconstruction_error']:
         error_options['error_func_list'].append(('recon_err', lambda Uhat: util.reconstruction_error(Uhat, Xtest, normsXtest)))
 
+    if error_options['compute_pop_whitening_error']:
+        assert (pca_algorithm == 'minimax_whitening_PCA') or (pca_algorithm == 'if_minimax_whitening_PCA'), 'Whitening error can only be computed for minimax_whitening_PCA'
+        error_options['error_func_list'].append(('pop_whitening_err', lambda Uhat: util.whitening_error(Uhat, data['U'], data['sigma2'])))
+
+
+    if error_options['compute_batch_whitening_error']:
+        assert (pca_algorithm == 'minimax_whitening_PCA') or (pca_algorithm == 'if_minimax_whitening_PCA'), 'Whitening error can only be computed for minimax_whitening_PCA'
+        eig_val,V = np.linalg.eigh(X.dot(X.T) / n)
+        idx       = np.flip(np.argsort(eig_val),0)
+        eig_val   = eig_val[idx]
+        V         = V[:,idx]
+        U_batch   = V[:,:q]
+        error_options['error_func_list'].append(('batch_whitening_err', lambda Uhat: util.whitening_error(Uhat, U_batch, eig_val[:q,np.newaxis])))
 
 # Main chunk of the code follows: run the appropriate algorithm
 
-    pca_algorithm = algorithm_options['pca_algorithm']
 
+    print('Starting simulation with algorithm: ' + pca_algorithm)
 
     if pca_algorithm == 'CCIPCA':
         if compute_error:
@@ -149,6 +166,15 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
                 *_, = minimax_PCA(X[:,n0:], q, tau, n_epoch)
             print('minimax_PCA took %f sec.' % t.interval)
 
+    elif pca_algorithm == 'minimax_whitening_PCA':
+        tau = algorithm_options['tau']
+        if compute_error:
+            errs = minimax_whitening_PCA(X[:,n0:], q, tau, n_epoch, error_options)
+        else:
+            with Timer() as t:
+                *_, = minimax_whitening_PCA(X[:,n0:], q, tau, n_epoch)
+            print('minimax_whitening_PCA took %f sec.' % t.interval)
+
     elif pca_algorithm == 'if_minimax_PCA':
         tau = algorithm_options['tau']
         if compute_error:
@@ -158,6 +184,14 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
                 *_, = if_minimax_PCA(X[:,n0:], q, tau, n_epoch)
             print('if_minimax_PCA took %f sec.' % t.interval)
 
+    elif pca_algorithm == 'if_minimax_whitening_PCA':
+        tau = algorithm_options['tau']
+        if compute_error:
+            errs = if_minimax_whitening_PCA(X[:,n0:], q, tau, n_epoch, error_options)
+        else:
+            with Timer() as t:
+                *_, = if_minimax_whitening_PCA(X[:,n0:], q, tau, n_epoch)
+            print('if_minimax_whitening_PCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'OSM_PCA':
         lambda_ = 0
@@ -167,6 +201,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
             with Timer() as t:
                 *_, = OSM_PCA(X[:,n0:], q, lambda_, n_epoch)
             print('OSM_PCA took %f sec.' % t.interval)
+    else:
+        assert 0, 'You did not specify a valid algorithm.'
 
     filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_n0_%d_ntest_%d' %(pca_algorithm, d, q, n, n_epoch, n0, n_test)
     if compute_error:
@@ -204,7 +240,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
 if __name__ == "__main__":
 
-    algo_names = ['CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
+    algo_names = ['CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_whitening_PCA', 'if_minimax_whitening_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
     output_folder = os.getcwd() + '/test'
 
     error_options = {
@@ -212,14 +248,16 @@ if __name__ == "__main__":
         # 'orthogonalize_iterate' : False,
         # 'compute_batch_error' : True,
         # 'compute_population_error' : True,
-        # 'compute_strain_error' : True,
-        # 'compute_reconstruction_error' : True
+        # # 'compute_strain_error' : False,
+        # # 'compute_reconstruction_error' : False,
+        # 'compute_pop_whitening_error' : True,
+        # 'compute_batch_whitening_error' : True
     }
 
     simulation_options = {
-        'd' : 32768,
-        'q' : 10,
-        'n' : 400,
+        'd' : 100,
+        'q' : 3,
+        'n' : 2000,
         'n0': 0, ##NOT IMPLEMENTED
         'n_epoch': 10,
         'n_test' : 256,
@@ -228,16 +266,19 @@ if __name__ == "__main__":
 
     generator_options = {
         'method'   : 'spiked_covariance',
-        'lambda_q' : 1,
+        'lambda_q' : 0.5,
         'normalize': True,
-        'rho'      : 0.1
+        'rho'      : 0.01
     }
 
     algorithm_options = {
-        'pca_algorithm' : algo_names[0],
+        'pca_algorithm' : algo_names[5],
         'tau'           : 0.5,
         'tol'           : 1e-7
     }
+
+    if algorithm_options['pca_algorithm'] == 'minimax_whitening_PCA' or algorithm_options['pca_algorithm'] == 'if_minimax_whitening_PCA':
+        algorithm_options['tau'] = simulation_options['q'] * algorithm_options['tau']
 
     errs = run_simulation(output_folder, simulation_options, generator_options, algorithm_options)
 
@@ -248,7 +289,7 @@ if __name__ == "__main__":
         plt.subplot(211)
         plt.title(algorithm_options['pca_algorithm'])
         for err_name in errs:
-            if err_name in ['batch_err', 'population_err']:
+            if err_name in ['batch_err', 'population_err', 'pop_whitening_err', 'batch_whitening_err']:
                 handle, = plt.plot(np.log10(errs[err_name]), label=err_name)
                 handles.append(handle)
         plt.legend(handles=handles)

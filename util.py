@@ -43,6 +43,26 @@ def subspace_error(Uhat, U, relative_error_flag=True):
     #return np.linalg.norm(np.dot(Uhat, Uhat.T) - np.dot(U, U.T), ord='fro')
 
 
+
+def whitening_error(Uhat, U, sigma2, relative_error_flag=True):
+    """
+    Parameters:
+    ====================
+    Uhat -- The approximation Uhat of an orthonormal basis for the PCA subspace of size d by q
+    U    -- An orthonormal basis for the PCA subspace of size d by q
+
+    Output:
+    ====================
+    err -- the (relative) Frobenius norm error
+    """
+    B = np.dot(U, sigma2**(-1) * U.T )
+
+    err = np.linalg.norm(np.dot(Uhat, Uhat.T) - B, ord='fro')
+    if relative_error_flag:
+        err /= np.linalg.norm(B,ord='fro')
+    return err
+
+
 def reconstruction_error(Uhat, X, normsX):
 	res = X - Uhat.dot(Uhat.T.dot(X))
 	res_norms = np.sum(np.abs(res)**2,0)**0.5
@@ -76,7 +96,7 @@ def generate_samples(d, q, n, options):
         X  += U.dot( (w.T*sigma).T)
 
         if options['return_U']:
-            return {'X': X, 'U' : U}
+            return {'X': X, 'U' : U, 'sigma2' : (sigma**2)[:,np.newaxis]}
         else:
             return {'X' : X}
 
