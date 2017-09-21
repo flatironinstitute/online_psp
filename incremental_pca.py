@@ -24,6 +24,7 @@ def _iterate(X, lambda_, Uhat, tol, f, n_its, n, q):
         x        = x - Uhat.dot(Uhatx);
         normx    = np.sqrt(x.dot(x))#np.linalg.norm(x)
 
+        #TODO: fix this atleast_2d for efficiency
         if (normx >= tol):
             lambda_  = np.concatenate((lambda_, [0]))
             Uhatx    = np.concatenate((Uhatx, [normx]))

@@ -40,7 +40,7 @@ def _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, error_option
             # Orthogonalize the data against this approximate eigenvector
             x          = x - np.dot(x,Uhat[:,i]) * Uhat[:,i]
 
-    # The algorithm dictates an initial guess of the first data point, so the rest is not defined
+    # The algorithm dictates an initial guess of the first data point, so the rest of the errors are not defined
     #
     # for i in range(q):
     #     errs[:,i] = errs[:,q]

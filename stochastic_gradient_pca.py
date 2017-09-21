@@ -39,7 +39,7 @@ def _iterate(X, Uhat, n_its, n, q):
         phiU = Uhat * phi
         Z = - phiU - 2 * phiU.dot(A) + X[:,j,np.newaxis]
 
-        Uhat = Uhat + eta(t) * Z*phi
+        Uhat = Uhat + Z*(eta(t)*phi)
 
 
     return Uhat
@@ -64,7 +64,7 @@ def _iterate_and_compute_errors(X, Uhat, n_its, n, q, error_options):
         phiU = Uhat * phi
         Z = - phiU - 2 * phiU.dot(A) + X[:,j,np.newaxis]
 
-        Uhat = Uhat + eta(t) * Z*phi
+        Uhat = Uhat +  Z*(eta(t)*phi)
 
 
     return errs

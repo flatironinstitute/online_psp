@@ -63,11 +63,11 @@ def _iterate_and_compute_errors(X, M, W, tau, n_its, n, error_options):
 
         # W <- W + 2 eta(t) * (y*x' - W)
         step = eta(t)
-        W    = (1-2*step) * W + 2*step * np.outer(y,X[:,j])
+        W    = (1-2*step) * W + np.outer(2*step*y,X[:,j])
 
         # M <- M + eta(t)/tau * (y*y' - M)
         step = step/tau
-        M    = (1-step) * M + step * np.outer(y,y)
+        M    = (1-step) * M + np.outer( step*y,y)
 
     return errs
 

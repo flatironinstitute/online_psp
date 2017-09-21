@@ -199,17 +199,17 @@ if __name__ == "__main__":
     output_folder = os.getcwd() + '/test'
 
     error_options = {
-        #'n_skip' : 128, ##NOT IMPLEMENTED
-        # 'orthogonalize_iterate' : False,
-        # 'compute_batch_error' : True,
-        # 'compute_population_error' : True,
-        # 'compute_strain_error' : True,
-        # 'compute_reconstruction_error' : True
+        'n_skip' : 128, ##NOT IMPLEMENTED
+        'orthogonalize_iterate' : False,
+        'compute_batch_error' : True,
+        'compute_population_error' : True,
+        'compute_strain_error' : True,
+        'compute_reconstruction_error' : True
     }
 
     simulation_options = {
-        'd' : 1000,
-        'q' : 500,
+        'd' : 100,
+        'q' : 5,
         'n' : 2000,
         'n0': 0, ##NOT IMPLEMENTED
         'n_epoch': 10,
@@ -225,7 +225,7 @@ if __name__ == "__main__":
     }
 
     algorithm_options = {
-        'pca_algorithm' : algo_names[2],
+        'pca_algorithm' : algo_names[4],
         'tau'           : 0.5,
         'tol'           : 1e-7
     }
