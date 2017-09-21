@@ -25,11 +25,11 @@ def _iterate(X, M, W, ysq, lambda_, n_its, n, q):
         y_tmp    = y / ysq
         y_tmp_sq = y**2 / ysq;
 
-        # Fix this reshape for efficiency
+        # Fix this reshape for efficiency?
         y_tmp_sq = y_tmp_sq.reshape(q,1)
 
-        W = W + np.outer(y_tmp, X[:,j]) - y_tmp_sq * W
-        M = M + np.outer((1+lambda_)*y_tmp, y) - y_tmp_sq * M
+        W = (1-y_tmp_sq) * W + np.outer(y_tmp, X[:,j])
+        M = (1-y_tmp_sq) * M + np.outer((1+lambda_)*y_tmp, y)
 
         W[np.isnan(W)] = 0;
         M[np.isnan(M)] = 0;
@@ -61,8 +61,8 @@ def _iterate_and_compute_errors(X, M, W, ysq, lambda_, n_its, n, q, error_option
         # Fix this reshape for efficiency
         y_tmp_sq = y_tmp_sq.reshape(q,1)
 
-        W = W + np.outer(y_tmp, X[:,j]) - y_tmp_sq * W
-        M = M + np.outer((1+lambda_)*y_tmp, y) - y_tmp_sq * M
+        W = (1-y_tmp_sq)*W + np.outer(y_tmp, X[:,j])
+        M = (1-y_tmp_sq)*M + np.outer((1+lambda_)*y_tmp, y)
 
         W[np.isnan(W)] = 0;
         M[np.isnan(M)] = 0;

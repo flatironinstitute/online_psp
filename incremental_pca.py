@@ -28,7 +28,7 @@ def _iterate(X, lambda_, Uhat, tol, f, n_its, n, q):
         if (normx >= tol):
             lambda_  = np.concatenate((lambda_, [0]))
             Uhatx    = np.concatenate((Uhatx, [normx]))
-            Uhat     = np.concatenate((Uhat, np.atleast_2d(x.T).T / normx),1)
+            Uhat     = np.concatenate((Uhat, x[:,np.newaxis] / normx),1)
 
         # Get new eigenvectors, is this possibly fast at all?
         d,V     = np.linalg.eigh(np.diag(lambda_) + np.outer(Uhatx,Uhatx.T))

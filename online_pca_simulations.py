@@ -18,6 +18,7 @@ from if_minimax_subspace_projection import if_minimax_PCA
 from ccipca import CCIPCA
 from incremental_pca import incremental_PCA
 from stochastic_gradient_pca import SGA_PCA
+from subspace_network_learning_pca import SNL_PCA
 from online_similarity_matching import OSM_PCA
 
 from collections import defaultdict
@@ -114,6 +115,14 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
                 *_, = CCIPCA(X[:,n0:], q, n_epoch)
             print('CCIPCA took %f sec.' % t.interval)
 
+    elif pca_algorithm == 'SNL_PCA':
+        if compute_error:
+            errs = SNL_PCA(X[:,n0:], q, n_epoch, error_options=error_options)
+        else:
+            with Timer() as t:
+                *_, = SNL_PCA(X[:,n0:], q, n_epoch)
+            print('SNL_PCA took %f sec.' % t.interval)
+
     elif pca_algorithm == 'SGA_PCA':
         if compute_error:
             errs = SGA_PCA(X[:,n0:], q, n_epoch, error_options)
@@ -195,22 +204,22 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
 if __name__ == "__main__":
 
-    algo_names = ['SGA_PCA', 'incremental_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
+    algo_names = ['CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
     output_folder = os.getcwd() + '/test'
 
     error_options = {
-        'n_skip' : 128, ##NOT IMPLEMENTED
-        'orthogonalize_iterate' : False,
-        'compute_batch_error' : True,
-        'compute_population_error' : True,
-        'compute_strain_error' : True,
-        'compute_reconstruction_error' : True
+        # 'n_skip' : 128, ##NOT IMPLEMENTED
+        # 'orthogonalize_iterate' : False,
+        # 'compute_batch_error' : True,
+        # 'compute_population_error' : True,
+        # 'compute_strain_error' : True,
+        # 'compute_reconstruction_error' : True
     }
 
     simulation_options = {
-        'd' : 100,
-        'q' : 5,
-        'n' : 2000,
+        'd' : 32768,
+        'q' : 10,
+        'n' : 400,
         'n0': 0, ##NOT IMPLEMENTED
         'n_epoch': 10,
         'n_test' : 256,
@@ -225,7 +234,7 @@ if __name__ == "__main__":
     }
 
     algorithm_options = {
-        'pca_algorithm' : algo_names[4],
+        'pca_algorithm' : algo_names[0],
         'tau'           : 0.5,
         'tol'           : 1e-7
     }

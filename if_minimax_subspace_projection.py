@@ -28,7 +28,6 @@ def eta(t):
 
     return 1.0 / (t + 1e3)
 
-
 def _iterate(X, Minv, W, tau, n_its, n):
     for t in range(n_its):
         # Neural dynamics, short-circuited to the steady-state solution

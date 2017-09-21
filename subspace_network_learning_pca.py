@@ -1,7 +1,6 @@
-# Title: stochastic_gradient_pca.py
-# Description: A function for PCA using stochastic gradient ascent
+# Title: subspace_network_learning_pca.py
+# Description: A function for PCA using subspace network learning
 # Author: Victor Minden (vminden@flatironinstitute.org)
-# Notes: Adapted from code by Andrea Giovanni and Cengiz Pehlevan
 # Reference: (Cardot and Degras, 2015)
 
 ##############################
@@ -26,16 +25,15 @@ def eta(t):
 
     return 1/ (t + 1e3)
 
+
 def _iterate(X, Uhat, n_its, n, q):
     for t in range(n_its):
         j    = t % n
 
-        # Uhat = Uhat + eta(t) * np.outer(X[:,j], Uhat.T.dot(X[:,j,np.newaxis]).T)
-        # Uhat,r = np.linalg.qr(Uhat)
-        #
+
         phi  = Uhat.T.dot(X[:,j])
         phiU = Uhat * phi
-        Z = phiU - 2 * np.cumsum(phiU,axis=1) + X[:,j,np.newaxis]
+        Z = phiU - 2 * np.sum(phiU,axis=1)[:,np.newaxis] + X[:,j,np.newaxis]
 
         Uhat = Uhat + Z*(eta(t)*phi)
 
@@ -53,14 +51,11 @@ def _iterate_and_compute_errors(X, Uhat, n_its, n, q, error_options):
 
         j    = t % n
 
-        # Uhat = Uhat + eta(t) * np.outer(X[:,j], Uhat.T.dot(X[:,j,np.newaxis]).T)
-        # Uhat,r = np.linalg.qr(Uhat)
-        #
         phi  = Uhat.T.dot(X[:,j])
         phiU = Uhat * phi
-        sumphiU = np.cumsum(phiU,axis=1)
-        Z = phiU - 2 * sumphiU + X[:,j,np.newaxis]
-        Uhat = Uhat +  Z*(eta(t)*phi)
+        Z = phiU - 2 * np.sum(phiU,axis=1)[:,np.newaxis] + X[:,j,np.newaxis]
+
+        Uhat = Uhat + Z*(eta(t)*phi)
 
 
     return errs
@@ -68,7 +63,7 @@ def _iterate_and_compute_errors(X, Uhat, n_its, n, q, error_options):
 
 
 
-def SGA_PCA(X, q, n_epoch=1, error_options=None, Uhat0=None):
+def SNL_PCA(X, q, n_epoch=1, error_options=None, Uhat0=None):
 
     """
     Parameters:
@@ -100,33 +95,3 @@ def SGA_PCA(X, q, n_epoch=1, error_options=None, Uhat0=None):
         return _iterate_and_compute_errors(X, Uhat, n_its, n, q, error_options)
     else:
         return _iterate(X, Uhat, n_its, n, q)
-
-
-
-
-
-
-#
-# if __name__ == "__main__":
-#
-#     # Run a test of SGA_PCA
-#     print("Testing SGA_PCA")
-#     # Parameters
-#     n       = 2000
-#     d       = 10
-#     q       = 3     # Value of q is technically hard-coded below, sorry
-#     n_epoch = 10
-#
-#     X     = np.random.normal(0,1,(d,n))
-#     # Note: Numpy SVD returns V transpose
-#     U,s,Vt = np.linalg.svd(X, full_matrices=False)
-#
-#     s = np.concatenate( ([np.sqrt(3),np.sqrt(2),1], 1e-1*np.random.random(d-3)))
-#     D = np.diag(np.sqrt(n) * s )
-#
-#     X = np.dot(U, np.dot(D, Vt))
-#
-#     Uhat,errs = SGA_PCA(X, q, n_epoch, U=U[:,:q])
-#     print('The initial error was %f and the final error was %f.' %(errs[0],errs[-1]))
-#     # plt.plot(np.log10(errs))
-#     # plt.show()

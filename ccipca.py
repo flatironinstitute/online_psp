@@ -17,7 +17,7 @@ def _iterate(X, lambda_, Uhat, ell, n_its, n, q):
         j       = t % n
         x       = X[:,j]
         for i in range(q):
-            v          = (t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x
+            v          = ((t-ell)/(t+1) * lambda_[i]) * Uhat[:,i] + ((1+ell)/(t+1) * np.dot(x,Uhat[:,i]))* x
             lambda_[i] = np.sqrt(v.dot(v))#np.linalg.norm(v)
             Uhat[:,i]  = v/lambda_[i]
             # Orthogonalize the data against this approximate eigenvector
@@ -74,7 +74,7 @@ def CCIPCA(X, q, n_epoch=1, error_options=None, Uhat0=None, lambda0=None, ell=2)
         assert Uhat0.shape == (d,q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d,q)
         Uhat = Uhat0
     else:
-        # Check me
+        # TODO: maybe replace me with better initialization
         Uhat = X[:,:q].copy()
 
     if lambda0 is not None:
