@@ -13,7 +13,7 @@ import util
 
 
 def _iterate(X, lambda_, Uhat, ell, n_its, n, q):
-    for t in range(q,n_its):
+    for t in range(1,n_its):
         j       = t % n
         x       = X[:,j]
         for i in range(q):
@@ -29,7 +29,7 @@ def _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, error_option
 
     errs = util.initialize_errors(error_options, n_its)
 
-    for t in range(q,n_its):
+    for t in range(1,n_its):
         j       = t % n
         util.compute_errors(error_options, Uhat, t, errs)
         x       = X[:,j]
@@ -81,7 +81,7 @@ def CCIPCA(X, q, n_epoch=1, error_options=None, Uhat0=None, lambda0=None, ell=2)
         assert lambda0.shape == (q,d), "The shape of the initial guess lambda0 must be (q,)=(%d,)" % (q)
         lambda_ = lambda0
     else:
-        lambda_= np.ones((q,))
+        lambda_= np.random.normal(0,1,(q,)) / np.sqrt(q)
 
     n_its = n_epoch * n
 

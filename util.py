@@ -38,7 +38,7 @@ def subspace_error(Uhat, U, relative_error_flag=True):
     B   = Uhat.T.dot(Uhat)
     err = np.sqrt(q + np.trace(B.dot(B)) - 2*np.trace(A.dot(A.T)))
     if relative_error_flag:
-        err = err / q
+        err = err / np.sqrt(q)
     return err
     #return np.linalg.norm(np.dot(Uhat, Uhat.T) - np.dot(U, U.T), ord='fro')
 

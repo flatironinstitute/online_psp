@@ -120,50 +120,54 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         error_options['error_func_list'].append(('batch_whitening_err', lambda Uhat: util.whitening_error(Uhat, U_batch, eig_val[:q,np.newaxis])))
 
 # Main chunk of the code follows: run the appropriate algorithm
+    # TODO: May need to be changed to account for when n0 is implemented
+    n0 = 1
+    Uhat0 = np.random.normal(0,1,(d,q)) / np.sqrt(d)
+    Uhat0[:,0] = X[:,0] / np.linalg.norm(X[:,0],2)
 
 
     print('Starting simulation with algorithm: ' + pca_algorithm)
 
     if pca_algorithm == 'CCIPCA':
         if compute_error:
-            errs = CCIPCA(X[:,n0:], q, n_epoch, error_options=error_options)
+            errs = CCIPCA(X[:,n0:], q, n_epoch, error_options=error_options, Uhat0=Uhat0,ell=0)
         else:
             with Timer() as t:
-                *_, = CCIPCA(X[:,n0:], q, n_epoch)
+                *_, = CCIPCA(X[:,n0:], q, n_epoch, Uhat0=Uhat0,ell=0)
             print('CCIPCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'SNL_PCA':
         if compute_error:
-            errs = SNL_PCA(X[:,n0:], q, n_epoch, error_options=error_options)
+            errs = SNL_PCA(X[:,n0:], q, n_epoch, error_options=error_options, Uhat0=Uhat0)
         else:
             with Timer() as t:
-                *_, = SNL_PCA(X[:,n0:], q, n_epoch)
+                *_, = SNL_PCA(X[:,n0:], q, n_epoch, Uhat0=Uhat0)
             print('SNL_PCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'SGA_PCA':
         if compute_error:
-            errs = SGA_PCA(X[:,n0:], q, n_epoch, error_options)
+            errs = SGA_PCA(X[:,n0:], q, n_epoch, error_options, Uhat0=Uhat0)
         else:
             with Timer() as t:
-                *_, = SGA_PCA(X[:,n0:], q, n_epoch)
+                *_, = SGA_PCA(X[:,n0:], q, n_epoch, Uhat0=Uhat0)
             print('SGA_PCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'incremental_PCA':
         tol = algorithm_options['tol']
         if compute_error:
-            errs = incremental_PCA(X[:,n0:], q, n_epoch, tol, error_options=error_options)
+            errs = incremental_PCA(X[:,n0:], q, n_epoch, tol, error_options=error_options, Uhat0=Uhat0)
         else:
             with Timer() as t:
-                *_, = incremental_PCA(X[:,n0:], q, n_epoch, tol)
+                *_, = incremental_PCA(X[:,n0:], q, n_epoch, tol, Uhat0=Uhat0)
             print('incremental_PCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'minimax_PCA':
         tau = algorithm_options['tau']
         if compute_error:
-            errs = minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options)
+            errs = minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
         else:
             with Timer() as t:
-                *_, = minimax_PCA(X[:,n0:], q, tau, n_epoch)
+                *_, = minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
             print('minimax_PCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'minimax_whitening_PCA':
@@ -178,28 +182,30 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     elif pca_algorithm == 'if_minimax_PCA':
         tau = algorithm_options['tau']
         if compute_error:
-            errs = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options)
+            errs = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
         else:
             with Timer() as t:
-                *_, = if_minimax_PCA(X[:,n0:], q, tau, n_epoch)
+                *_, = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
             print('if_minimax_PCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'if_minimax_whitening_PCA':
         tau = algorithm_options['tau']
         if compute_error:
-            errs = if_minimax_whitening_PCA(X[:,n0:], q, tau, n_epoch, error_options)
+            errs = if_minimax_whitening_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
         else:
             with Timer() as t:
-                *_, = if_minimax_whitening_PCA(X[:,n0:], q, tau, n_epoch)
+                *_, = if_minimax_whitening_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
             print('if_minimax_whitening_PCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'OSM_PCA':
         lambda_ = 0
+        #TODO: Validate me?
+        ysq0 = 2*np.pi*np.linalg.norm(X[:,0])**2 / d * np.ones((Uhat0.shape[1],))
         if compute_error:
-            errs = OSM_PCA(X[:,n0:], q, lambda_, n_epoch, error_options)
+            errs = OSM_PCA(X[:,n0:], q, lambda_, n_epoch, error_options, ysq0=ysq0, W0=Uhat0.T)
         else:
             with Timer() as t:
-                *_, = OSM_PCA(X[:,n0:], q, lambda_, n_epoch)
+                *_, = OSM_PCA(X[:,n0:], q, lambda_, n_epoch, ysq0=ysq0, W0=Uhat0.T)
             print('OSM_PCA took %f sec.' % t.interval)
     else:
         assert 0, 'You did not specify a valid algorithm.'
@@ -244,35 +250,35 @@ if __name__ == "__main__":
     output_folder = os.getcwd() + '/test'
 
     error_options = {
-        # 'n_skip' : 128, ##NOT IMPLEMENTED
-        # 'orthogonalize_iterate' : False,
-        # 'compute_batch_error' : True,
-        # 'compute_population_error' : True,
-        # # 'compute_strain_error' : False,
-        # # 'compute_reconstruction_error' : False,
+        'n_skip' : 128, ##NOT IMPLEMENTED
+        'orthogonalize_iterate' : False,
+        'compute_batch_error' : True,
+        'compute_population_error' : True,
+        # 'compute_strain_error' : False,
+        # 'compute_reconstruction_error' : False,
         # 'compute_pop_whitening_error' : True,
         # 'compute_batch_whitening_error' : True
     }
 
     simulation_options = {
-        'd' : 100,
-        'q' : 3,
-        'n' : 2000,
+        'd' : 16,
+        'q' : 4,
+        'n' : 4096,
         'n0': 0, ##NOT IMPLEMENTED
-        'n_epoch': 10,
+        'n_epoch': 1,
         'n_test' : 256,
         'error_options' : error_options
     }
 
     generator_options = {
         'method'   : 'spiked_covariance',
-        'lambda_q' : 0.5,
+        'lambda_q' : 1,
         'normalize': True,
-        'rho'      : 0.01
+        'rho'      : 1e-1
     }
 
     algorithm_options = {
-        'pca_algorithm' : algo_names[5],
+        'pca_algorithm' : algo_names[0],
         'tau'           : 0.5,
         'tol'           : 1e-7
     }

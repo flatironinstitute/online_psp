@@ -40,11 +40,12 @@ def _iterate(X, M, W, tau, n_its, n, q):
         W    = (1-2*step) * W +  np.outer(2*step*y,X[:,j])
 
         # take a STOCHASTIC step in M
-        v    = np.zeros(q)
-        v[np.random.randint(q)] = 1
+        # v    = np.zeros(q)
+        # v[np.random.randint(q)] = 1
+        v = np.random.normal(0,1,(q))
         # M <- M + eta(t)/tau * (y*y' - q *er*er')
         step = step/tau
-        M    = M + np.outer( step*y,y) - np.outer(q*step*v,v)
+        M    = M + np.outer( step*y,y) - np.outer(step*v,v)
 
     return M,W
 
@@ -68,11 +69,12 @@ def _iterate_and_compute_errors(X, M, W, tau, n_its, n, q, error_options):
         W    = (1-2*step) * W + np.outer(2*step*y,X[:,j])
 
         # take a STOCHASTIC step in M
-        v    = np.zeros(q)
-        v[np.random.randint(q)] = 1
+        # v    = np.zeros(q)
+        # v[np.random.randint(q)] = 1
+        v = np.random.normal(0,1,(q))
         # M <- M + eta(t)/tau * (y*y' - q *er*er')
         step = step/tau
-        M    = M + np.outer( step*y,y) - np.outer(q*step*v,v)
+        M    = M + np.outer( step*y,y) - np.outer(step*v,v)
 
     return errs
 

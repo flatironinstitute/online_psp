@@ -25,7 +25,7 @@ def eta(t):
     step -- learning rate at time t
     """
 
-    return 1.0 / (t + 1e3)
+    return 1/(t + 1000)
 
 def _iterate(X, Minv, W, tau, n_its, n, q):
     for t in range(n_its):
@@ -40,8 +40,9 @@ def _iterate(X, Minv, W, tau, n_its, n, q):
         W    = (1-2*step) * W +  np.outer(2*step*y,X[:,j])
 
         # take a STOCHASTIC step in M
-        v    = np.zeros(q)
-        v[np.random.randint(q)] = 1
+        # v    = np.zeros(q)
+        # v[np.random.randint(q)] = 1
+        v = np.random.normal(0,1,(q))
         # M <- M + eta(t)/tau * (y*y' - q *er*er')
         step = step/tau
 
@@ -50,7 +51,7 @@ def _iterate(X, Minv, W, tau, n_its, n, q):
         Minv  = Minv - np.outer(step*Minvy, Minvy.T)/(1+step * np.dot(y,Minvy))
 
         Minvv = Minv.dot(v)
-        step  = q*step
+        # step  = q*step
         Minv  = Minv + np.outer(step*Minvv, Minvv.T)/(1+step * np.dot(-v,Minvv))
         # M     = M + np.outer( step*y,y) - np.outer(q*step*v,v)
     return Minv,W
@@ -75,8 +76,9 @@ def _iterate_and_compute_errors(X, Minv, W, tau, n_its, n, q, error_options):
         W    = (1-2*step) * W + np.outer(2*step*y,X[:,j])
 
         # take a STOCHASTIC step in M
-        v    = np.zeros(q)
-        v[np.random.randint(q)] = 1
+        # v    = np.zeros(q)
+        # v[np.random.randint(q)] = 1
+        v = np.random.normal(0,1,(q))
         # M <- M + eta(t)/tau * (y*y' - q *er*er')
         step = step/tau
 
@@ -85,7 +87,7 @@ def _iterate_and_compute_errors(X, Minv, W, tau, n_its, n, q, error_options):
         Minv  = Minv - np.outer(step*Minvy, Minvy.T)/(1+step * np.dot(y,Minvy))
 
         Minvv = Minv.dot(v)
-        step  = q*step
+        # step  = q*step
         Minv  = Minv + np.outer(step*Minvv, Minvv.T)/(1+step * np.dot(-v,Minvv))
         # M     = M + np.outer( step*y,y) - np.outer(q*step*v,v)
 

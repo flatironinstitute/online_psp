@@ -102,7 +102,7 @@ def incremental_PCA(X, q, n_epoch=1, tol=1e-7, f=None, error_options=None, Uhat0
         assert lambda0.shape == (q,d), "The shape of the initial guess lambda0 must be (q,)=(%d,)" % (q)
         lambda_ = lambda0
     else:
-        lambda_= np.ones((q,))
+        lambda_= np.random.normal(0,1,(q,)) / np.sqrt(q)
 
     if f is not None:
         assert (f>0) and (f<1), "The parameter f must be between 0 and 1"
