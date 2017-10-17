@@ -79,6 +79,8 @@ def _iterate_and_compute_errors(X, Minv, W, tau, n_its, n, error_options):
         z    = Minv.dot(y)
         c    = step /(1 + step*np.dot(z,y))
         Minv = Minv -  np.outer(c*z, z.T)
+        # if not t % 1000:
+        #     print((np.linalg.norm(Minv,ord=2), np.linalg.norm(np.linalg.inv(Minv),ord=2)))
         # M    = (1-step) * M + step * np.outer(y,y)
 
 

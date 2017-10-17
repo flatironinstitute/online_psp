@@ -25,7 +25,7 @@ def eta(t):
     step -- learning rate at time t
     """
 
-    return 1.0 / (t + 1e3)
+    return 10/ (t + 1e4)
 
 def _iterate(X, M, W, tau, n_its, n, q):
     for t in range(n_its):

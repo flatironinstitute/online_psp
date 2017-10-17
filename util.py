@@ -13,7 +13,10 @@ def compute_errors(error_options, Uhat, t, errs):
     else:
         U = Uhat
     for i,(fname, f) in enumerate(error_options['error_func_list']):
-        errs[fname][t] = f(U)
+        if fname == 'batch_alignment_err':
+            errs[fname][t] = f(Uhat)
+        else:
+            errs[fname][t] = f(U)
 
 
 def initialize_errors(error_options, n_its):
@@ -61,6 +64,19 @@ def whitening_error(Uhat, U, sigma2, relative_error_flag=True):
     if relative_error_flag:
         err /= np.linalg.norm(B,ord='fro')
     return err
+
+
+def alignment_error(Uhat, U):
+    err = 0
+    for i in range(U.shape[1]):
+        colhat = Uhat[:,i]
+        colhat = colhat / np.linalg.norm(colhat)
+        col    = U[:,i]
+        angle  = col.dot(colhat)
+        err = max(err, (1-abs(angle)))
+
+    return err
+
 
 
 def reconstruction_error(Uhat, X, normsX):
