@@ -2,10 +2,11 @@ from online_pca_simulations import run_simulation
 import os
 from matplotlib import pyplot as plt
 import numpy as np
+import copy
 
 
 
-def run_test(simulation_options, algrithm_options):
+def run_test(simulation_options, algorithm_options):
     #algo_names = ['inv_minimax_PCA', 'rd_minimax_alignment_PCA', 'minimax_alignment_PCA', 'CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_whitening_PCA', 'if_minimax_whitening_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
     output_folder = os.getcwd() + '/ex'
 
@@ -27,7 +28,7 @@ def run_test(simulation_options, algrithm_options):
     for err_name in errs:
         print(err_name +': %f' %(errs[err_name][-1]))
     for err_name in errs:
-        if err_name in ['batch_err','batch_alignment_err']:
+        if err_name in ['batch_err','batch_alignment_err','batch_whitening_err']:
             handle, = plt.plot(np.log10(errs[err_name]), label=err_name)
             handles.append(handle)
     plt.legend(handles=handles)
@@ -62,7 +63,7 @@ error_options = {
     # 'compute_strain_error' : False,
     # 'compute_reconstruction_error' : False,
     #'compute_pop_whitening_error' : True,
-    #'compute_batch_whitening_error' : True,
+    # 'compute_batch_whitening_error' : True,
     'compute_batch_alignment_error' : True,
     'compute_diag_error' : True
 }
@@ -86,28 +87,29 @@ algorithm_options = {
 }
 
 
-# tests.append((simulation_options.copy(), algorithm_options.copy()))
+tests.append((copy.deepcopy(simulation_options), copy.deepcopy(algorithm_options)))
 
 simulation_options['d'] = 160
 simulation_options['q'] = 4
-algorithm_options['step_rule'] = lambda t: 50/(1e4 + t/10)
+algorithm_options['step_rule'] = lambda t: 50/(1e4 + t)/3
 
-# tests.append((simulation_options.copy(), algorithm_options.copy()))
+tests.append((copy.deepcopy(simulation_options), copy.deepcopy(algorithm_options)))
 
 simulation_options['d'] = 160
 simulation_options['q'] = 8
-algorithm_options['step_rule'] =  lambda t: 50/(1e4 + t/10)/3
+simulation_options['n'] = 4096*4
+algorithm_options['step_rule'] =  lambda t: 50/(1e4 + t/10)/8
 
 
-# tests.append((simulation_options.copy(), algorithm_options.copy()))
+tests.append((copy.deepcopy(simulation_options), copy.deepcopy(algorithm_options)))
 
 simulation_options['d'] = 160
 simulation_options['q'] = 32
 simulation_options['n'] = 4096*4*4
-algorithm_options['step_rule'] = lambda t: 50/(1e4 + 2*t)/12
+algorithm_options['step_rule'] = lambda t: 50/(1e4 + t/10)/64
 
 
-tests.append((simulation_options.copy(), algorithm_options.copy()))
+tests.append((copy.deepcopy(simulation_options), copy.deepcopy(algorithm_options)))
 
 
 for (sim,alg) in tests:

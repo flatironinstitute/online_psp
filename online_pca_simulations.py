@@ -14,8 +14,8 @@ import util
 import time
 
 # from alt_dynamics_psp import alt_dynamics_PCA
-from inv_minimax_subspace_projection import inv_minimax_PCA
-from rd_minimax_subspace_alignment import rd_minimax_alignment_PCA
+#from inv_minimax_subspace_projection import inv_minimax_PCA
+#from rd_minimax_subspace_alignment import rd_minimax_alignment_PCA
 from if_minimax_subspace_whitening import if_minimax_whitening_PCA
 from minimax_subspace_alignment import minimax_alignment_PCA
 from minimax_subspace_whitening import minimax_whitening_PCA
@@ -174,14 +174,14 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
                 *_, = minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T, eta = eta)
             print('minimax_alignment_PCA took %f sec.' % t.interval)
 
-    elif pca_algorithm == 'rd_minimax_alignment_PCA':
-        tau = algorithm_options['tau']
-        if compute_error:
-            errs = rd_minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
-        else:
-            with Timer() as t:
-                *_, = rd_minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
-            print('rd_minimax_alignment_PCA took %f sec.' % t.interval)
+    # elif pca_algorithm == 'rd_minimax_alignment_PCA':
+    #     tau = algorithm_options['tau']
+    #     if compute_error:
+    #         errs = rd_minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
+    #     else:
+    #         with Timer() as t:
+    #             *_, = rd_minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
+    #         print('rd_minimax_alignment_PCA took %f sec.' % t.interval)
 
 
 
@@ -245,14 +245,14 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
                 *_, = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
             print('if_minimax_PCA took %f sec.' % t.interval)
 
-    elif pca_algorithm == 'inv_minimax_PCA':
-        tau = algorithm_options['tau']
-        if compute_error:
-            errs = inv_minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
-        else:
-            with Timer() as t:
-                *_, = inv_minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
-            print('inv_minimax_PCA took %f sec.' % t.interval)
+    # elif pca_algorithm == 'inv_minimax_PCA':
+    #     tau = algorithm_options['tau']
+    #     if compute_error:
+    #         errs = inv_minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
+    #     else:
+    #         with Timer() as t:
+    #             *_, = inv_minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
+    #         print('inv_minimax_PCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'if_minimax_whitening_PCA':
         tau = algorithm_options['tau']

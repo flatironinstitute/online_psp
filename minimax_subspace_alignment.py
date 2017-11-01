@@ -59,17 +59,22 @@ def _iterate_and_compute_errors(X, Lambda, M, W, tau, n_its, n, q, error_options
     dM = np.zeros(M.shape)
     C = X.dot(X.T)/n
     Chalf = fmp(C,0.5)
+
     for t in range(n_its):
+        Md = np.diag(1./np.diag(M))
+        Mo = M - np.diag(np.diag(M))
         # Record error
-        Uhat = Chalf.dot(solve(M, Lambda.dot(W)).T)
-        util.compute_errors(error_options, W.T, t, errs,M)
+        Uhat = Lambda.dot(W)
+        Uhat = Md.dot(Uhat) - Md.dot(Mo.dot(Md.dot(Uhat)))
+        #Uhat = Chalf.dot(Uhat.T)
+        Uhat = Uhat.T
+        util.compute_errors(error_options, Uhat, t, errs,M)
 
         # Neural dynamics, short-circuited to the steady-state solution
         j = t % n
         #y = solve(M, Lambda.dot(W.dot(X[:,j])))
         y = Lambda.dot(W.dot(X[:,j]))
-        Md = np.diag(1./np.diag(M))
-        Mo = M - np.diag(np.diag(M))
+
         y = Md.dot(y) - Md.dot(Mo.dot(Md.dot(y)))
         # Plasticity, using gradient ascent/descent
 
