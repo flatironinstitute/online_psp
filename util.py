@@ -7,7 +7,7 @@
 import numpy as np
 ##############################
 
-def compute_errors(error_options, Uhat, t, errs):
+def compute_errors(error_options, Uhat, t, errs,M=None):
     if error_options['orthogonalize_iterate']:
         U,_ = np.linalg.qr(Uhat)
     else:
@@ -15,6 +15,8 @@ def compute_errors(error_options, Uhat, t, errs):
     for i,(fname, f) in enumerate(error_options['error_func_list']):
         if fname == 'batch_alignment_err':
             errs[fname][t] = f(Uhat)
+        elif fname == 'diag_err':
+            errs[fname][t] = f(M)
         else:
             errs[fname][t] = f(U)
 
@@ -22,6 +24,12 @@ def compute_errors(error_options, Uhat, t, errs):
 def initialize_errors(error_options, n_its):
     return { fun_name : np.zeros(n_its) for (fun_name, _) in error_options['error_func_list'] }
 
+
+def diag_error(M, relative_error_flag=True):
+    err = np.linalg.norm(M - np.diag(np.diag(M)),ord='fro')
+    if relative_error_flag:
+        err = err / np.linalg.norm(M,ord='fro')
+    return err
 
 def subspace_error(Uhat, U, relative_error_flag=True):
 
@@ -73,9 +81,9 @@ def alignment_error(Uhat, U):
         colhat = colhat / np.linalg.norm(colhat)
         col    = U[:,i]
         angle  = col.dot(colhat)
-        err = max(err, (1-abs(angle)))
+        err = err + (1-abs(angle))
 
-    return err
+    return err / U.shape[1]
 
 
 

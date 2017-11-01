@@ -14,7 +14,7 @@ import util
 
 
 
-def eta(t):
+def eta_fun(t):
 
     """
     Parameters:
@@ -26,9 +26,9 @@ def eta(t):
     step -- learning rate at time t
     """
 
-    return 50/(1e4)
+    return 2/(1e3+1e-3*t)/2#2e-3#50/(1e4 + t)/5#50/(1e4)
 
-def _iterate(X, Lambda, M, W, tau, n_its, n, q):
+def _iterate(X, Lambda, M, W, tau, n_its, n, q, eta):
     for t in range(n_its):
         # Neural dynamics, short-circuited to the steady-state solution
         j = t % n
@@ -52,7 +52,7 @@ def _iterate(X, Lambda, M, W, tau, n_its, n, q):
 
 
 
-def _iterate_and_compute_errors(X, Lambda, M, W, tau, n_its, n, q, error_options):
+def _iterate_and_compute_errors(X, Lambda, M, W, tau, n_its, n, q, error_options, eta):
     errs = util.initialize_errors(error_options, n_its)
     beta = 0#0.55
     dW = np.zeros(W.shape)
@@ -62,12 +62,15 @@ def _iterate_and_compute_errors(X, Lambda, M, W, tau, n_its, n, q, error_options
     for t in range(n_its):
         # Record error
         Uhat = Chalf.dot(solve(M, Lambda.dot(W)).T)
-        util.compute_errors(error_options, W.T, t, errs)
+        util.compute_errors(error_options, W.T, t, errs,M)
 
         # Neural dynamics, short-circuited to the steady-state solution
         j = t % n
-        y = solve(M, Lambda.dot(W.dot(X[:,j])))
-
+        #y = solve(M, Lambda.dot(W.dot(X[:,j])))
+        y = Lambda.dot(W.dot(X[:,j]))
+        Md = np.diag(1./np.diag(M))
+        Mo = M - np.diag(np.diag(M))
+        y = Md.dot(y) - Md.dot(Mo.dot(Md.dot(y)))
         # Plasticity, using gradient ascent/descent
 
         # W <- W + 2 eta(t) * (y*x' - W)
@@ -88,7 +91,7 @@ def _iterate_and_compute_errors(X, Lambda, M, W, tau, n_its, n, q, error_options
 
 
 
-def minimax_alignment_PCA(X, q, tau=0.5, n_epoch=1, error_options=None, M0=None, W0=None, Lambda=None):
+def minimax_alignment_PCA(X, q, tau=0.5, n_epoch=1, error_options=None, M0=None, W0=None, Lambda=None, eta=None):
 
     """
     Parameters:
@@ -132,7 +135,10 @@ def minimax_alignment_PCA(X, q, tau=0.5, n_epoch=1, error_options=None, M0=None,
 
     n_its = n_epoch * n
 
+    if eta is None:
+        eta = lambda t: eta_fun(t)
+
     if error_options is not None:
-        return _iterate_and_compute_errors(X, Lambda, M, W, tau, n_its, n, q, error_options)
+        return _iterate_and_compute_errors(X, Lambda, M, W, tau, n_its, n, q, error_options, eta)
     else:
-        return _iterate(X, Lambda, M, W, tau, n_its, n, q)
+        return _iterate(X, Lambda, M, W, tau, n_its, n, q, eta)
