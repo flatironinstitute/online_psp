@@ -74,7 +74,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     # We wrap things in a default dict so we don't have to check if keys exist
     error_options = defaultdict(int, simulation_options['error_options'])
     compute_error = any(error_options)
-
+    if not error_options['n_skip']:
+        error_options['n_skip'] = 1
     if compute_error:
         # We will make a list of functions that take in the current iterate and return an error measure
         error_options['error_func_list'] = []
@@ -167,11 +168,16 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         else:
             eta = None
 
+        if 'step_rule2' in algorithm_options:
+            eta2 = algorithm_options['step_rule2']
+        else:
+            eta2 = eta
+
         if compute_error:
-            errs = minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T, eta=eta)
+            errs = minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T, eta=eta, eta2=eta2)
         else:
             with Timer() as t:
-                *_, = minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T, eta = eta)
+                *_, = minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T, eta = eta, eta2=eta2)
             print('minimax_alignment_PCA took %f sec.' % t.interval)
 
     # elif pca_algorithm == 'rd_minimax_alignment_PCA':
@@ -296,6 +302,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     }
 
     if compute_error:
+        for err_name in errs:
+            errs[err_name] = errs[err_name][np.nonzero(errs[err_name])]
         output_dict['errs'] = errs
     else:
         output_dict['runtime'] = t.interval
@@ -316,7 +324,7 @@ if __name__ == "__main__":
     output_folder = os.getcwd() + '/test'
 
     error_options = {
-        'n_skip' : 128, ##NOT IMPLEMENTED
+        'n_skip' : 1000, ##NOT IMPLEMENTED
         'orthogonalize_iterate' : False,
         'compute_batch_error' : True,
         'compute_population_error' : True,

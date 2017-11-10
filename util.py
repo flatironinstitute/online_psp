@@ -8,6 +8,8 @@ import numpy as np
 ##############################
 
 def compute_errors(error_options, Uhat, t, errs,M=None):
+    if t % error_options['n_skip']:
+        return
     if error_options['orthogonalize_iterate']:
         U,_ = np.linalg.qr(Uhat)
     else:

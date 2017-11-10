@@ -111,6 +111,13 @@ algorithm_options['step_rule'] = lambda t: 50/(1e4 + t/10)/64
 
 tests.append((copy.deepcopy(simulation_options), copy.deepcopy(algorithm_options)))
 
+simulation_options['d'] = 1600
+simulation_options['q'] = 32
+simulation_options['n'] = 4096*4*4
+algorithm_options['step_rule'] = lambda t: 50/(1e4 + t/10)/64
+
+
+tests.append((copy.deepcopy(simulation_options), copy.deepcopy(algorithm_options)))
 
 for (sim,alg) in tests:
     run_test(sim,alg)
