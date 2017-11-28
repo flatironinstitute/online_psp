@@ -63,7 +63,6 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     n0      = simulation_options['n0']
     n_epoch = simulation_options['n_epoch']
     n_test  = simulation_options['n_test']
-
     pca_init   = simulation_options['pca_init']
     init_ortho = simulation_options['init_ortho']
 
@@ -144,9 +143,9 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 # Main chunk of the code follows: run the appropriate algorithm
     # TODO: May need to be changed to account for when n0 is implemented
     if pca_init:
-        n0 = q
-        U,s,V = np.linalg.svd(X[:,:q], full_matrices=False)
-        Uhat0 = U
+        n0 = pca_init
+        U,s,V = np.linalg.svd(X[:,:pca_init], full_matrices=False)
+        Uhat0 = U[:,:q]
     else:
         n0 = 1
         Uhat0 = np.random.normal(0,1,(d,q)) / np.sqrt(d)
@@ -287,6 +286,9 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         filename += '_error'
     else:
         filename += '_timing'
+
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    filename += '_%s' %timestr
     filename += '.mat'
 
     output_dict = {
