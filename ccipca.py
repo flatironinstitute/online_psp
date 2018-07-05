@@ -6,9 +6,18 @@
 
 ##############################
 # Imports
+import sys
+sys.path.append('/mnt/home/agiovann/SOFTWARE/online_pca')
 import numpy as np
 from scipy.linalg import solve as solve
 import util
+from util import subspace_error
+import time
+import coord_update
+try:
+    profile
+except:
+    def profile(a): return a
 ##############################
 
 
@@ -17,7 +26,7 @@ def _iterate(X, lambda_, Uhat, ell, n_its, n, q):
         j       = t % n
         x       = X[:,j]
         for i in range(q):
-            v          = ((t-ell)/(t+1) * lambda_[i]) * Uhat[:,i] + ((1+ell)/(t+1) * np.dot(x,Uhat[:,i]))* x
+            v          = (max(t-ell,1)/(t+1) * lambda_[i]) * Uhat[:,i] + ((1+ell)/(t+1) * np.dot(x,Uhat[:,i]))* x
             lambda_[i] = np.sqrt(v.dot(v))#np.linalg.norm(v)
             Uhat[:,i]  = v/lambda_[i]
             # Orthogonalize the data against this approximate eigenvector
@@ -34,7 +43,7 @@ def _iterate_and_compute_errors(X, lambda_, Uhat, ell, n_its, n, q, error_option
         util.compute_errors(error_options, Uhat, t, errs)
         x       = X[:,j]
         for i in range(q):
-            v          = (t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x
+            v          = max(1,t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x
             lambda_[i] = np.sqrt(v.dot(v))#np.linalg.norm(v)
             Uhat[:,i]  = v/lambda_[i]
             # Orthogonalize the data against this approximate eigenvector
@@ -63,7 +72,7 @@ class CCIPCA_CLASS:
     compute_errors()
     """
 
-    def __init__(self, q, d, Uhat0=None, error_options=None, lambda0=None, ell=2):
+    def __init__(self, q, d, Uhat0=None, lambda0=None, ell=2, cython=True):
         if Uhat0 is not None:
             assert Uhat0.shape == (d,q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d,q)
             self.Uhat = Uhat0.copy()
@@ -75,33 +84,51 @@ class CCIPCA_CLASS:
         self.t = 1
 
         if lambda0 is not None:
-            assert lambda0.shape == (q,d), "The shape of the initial guess lambda0 must be (q,)=(%d,)" % (q)
-            self.lambda_ = lambda0
+            assert lambda0.shape == (q,), "The shape of the initial guess lambda0 must be (q,)=(%d,)" % (q)
+            self.lambda_ = lambda0.copy()
         else:
             self.lambda_= np.random.normal(0,1,(q,)) / np.sqrt(q)
 
         self.q = q
         self.d = d
-
-        self.error_options = error_options
         self.ell = ell
+        self.cython = cython
 
 
+    @profile
+    def fit_next(self,x_, in_place = False):
+        if not in_place:
+            x = x_.copy()
+        else:
+            x = x_
 
-    def fit_next(self,x_):
-        x = x_.copy()
         assert x.shape == (d,)
 
-        t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
-        for i in range(q):
-            v          = max(1,t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x # is that OK?
-            lambda_[i] = np.sqrt(v.dot(v))#np.linalg.norm(v)
-            Uhat[:,i]  = v/lambda_[i]
-            # Orthogonalize the data against this approximate eigenvector
-            x          = x - np.dot(x,Uhat[:,i]) * Uhat[:,i]
 
-        self.Uhat = Uhat
-        self.lambda_ = lambda_
+        if self.cython:
+            self.Uhat, self.lambda_ = coord_update.coord_update(x, d, np.double(self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q)
+#            self.Uhat, self.lambda_ = np.asarray(self.Uhat), np.asarray(self.lambda_)
+        else:
+            t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
+
+            for i in range(q):
+                v          = max(1,t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x # is that OK?
+                lambda_[i] = np.sqrt(v.dot(v))#np.linalg.norm(v)
+#                print(lambda_[i])
+                Uhat[:,i]  = v/lambda_[i]
+
+                # Orthogonalize the data against this approximate eigenvector
+#                print('BB')
+#                for kk in range(d):
+#                    print(x[kk])
+                x = x - np.dot(x,Uhat[:,i]) * Uhat[:,i]
+
+#                for kk in range(d):
+#                    Uhat[kk,i]  = v[kk]/lambda_[i]
+#                    print(Uhat[kk,i])
+#                print('BB**')
+            self.Uhat = Uhat
+            self.lambda_ = lambda_
         self.t += 1
 
 
@@ -130,14 +157,14 @@ def CCIPCA(X, q, n_epoch=1, error_options=None, Uhat0=None, lambda0=None, ell=2)
 
     if Uhat0 is not None:
         assert Uhat0.shape == (d,q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d,q)
-        Uhat = Uhat0
+        Uhat = Uhat0.copy()
     else:
         # TODO: maybe replace me with better initialization
-        Uhat = X[:,:q].copy()
+        Uhat = np.random.normal(loc = 0, scale = 1/d, size=(d,q))
 
     if lambda0 is not None:
-        assert lambda0.shape == (q,d), "The shape of the initial guess lambda0 must be (q,)=(%d,)" % (q)
-        lambda_ = lambda0
+        assert lambda0.shape == (q,), "The shape of the initial guess lambda0 must be (q,)=(%d,)" % (q)
+        lambda_ = lambda0.copy()
     else:
         lambda_= np.random.normal(0,1,(q,)) / np.sqrt(q)
 
@@ -149,18 +176,17 @@ def CCIPCA(X, q, n_epoch=1, error_options=None, Uhat0=None, lambda0=None, ell=2)
         return _iterate(X, lambda_, Uhat, ell, n_its, n, q)
 
 #%%
- if __name__ == "__main__":
+if __name__ == "__main__":
 #%%
      # Run a test of CCIPCA
      print('Testing CCIPCA')
      from util import generate_samples
 
-
      # Parameters
-     n       = 2000
-     d       = 50
-     q       = 5    # Value of q is technically hard-coded below, sorry
-     n_epoch = 10
+     n       = 5000
+     d       = 1000
+     q       = 100    # Value of q is technically hard-coded below, sorry
+     n_epoch = 1
 
      generator_options = {
         'method'   : 'spiked_covariance',
@@ -173,23 +199,46 @@ def CCIPCA(X, q, n_epoch=1, error_options=None, Uhat0=None, lambda0=None, ell=2)
      X = synth['X']
      U = synth['U']
      sigma2 = synth['sigma2']
+#     print([X.sum(),U.sum()])
+     lambda_ = np.random.normal(0,1,(q,)) / np.sqrt(q)
 
-     ccipca = CCIPCA_CLASS(q, d, Uhat0=X[:,:q])
-     ccipca = CCIPCA_CLASS(q, d)
-     from util import subspace_error
+#     ccipca = CCIPCA_CLASS(q, d)
      errs = []
+#     print([X.sum(),U.sum()])
 #     np.linalg.norm(Xtest, 'fro')
-     for n_e in range(n_epoch):
-         for x in X.T:
-             ccipca.fit_next(x)
-             errs.append(subspace_error(ccipca.Uhat,U[:,:q]))
-     pl.plot(errs)
-#%%
-     error_options = {
-        'n_skip':10,
-        'error_func_list' : [('batch_err', lambda Uhat: util.subspace_error(Uhat, U))],
-         'orthogonalize_iterate' : False,
 
-        }
-     errs = CCIPCA(X, q, n_epoch, Uhat0=U[:,:q], error_options = error_options)
-     print('The initial error was %f and the final error was %f.' %(errs[0],errs[-1]))
+     #%%
+     ccipca = CCIPCA_CLASS(q, d, Uhat0=X[:,:q], lambda0 = lambda_, cython=True)
+     X1 = X.copy()
+     time_1 = time.time()
+     for n_e in range(n_epoch):
+         for x in X1.T:
+             ccipca.fit_next(x,in_place = True)
+#             break
+#             errs.append(subspace_error(ccipca.Uhat,U[:,:q]))
+     time_2 = time.time() - time_1
+#     pl.plot(errs)
+     print(time_2)
+     print([subspace_error(np.asarray(ccipca.Uhat),U[:,:q])])
+#%%
+     ccipca = CCIPCA_CLASS(q, d, Uhat0=X[:,:q], lambda0 = lambda_, cython=False)
+     X1 = X.copy()
+     time_1 = time.time()
+     for n_e in range(n_epoch):
+         for x in X1.T:
+             ccipca.fit_next(x,in_place = True)
+#             break
+#             errs.append(subspace_error(ccipca.Uhat,U[:,:q]))
+     time_2 = time.time() - time_1
+#     pl.plot(errs)
+     print(time_2)
+     print([subspace_error(np.asarray(ccipca.Uhat),U[:,:q])])
+
+     #%%
+#     X1 = X.copy()
+#     time_1 = time.time()
+#     UU = CCIPCA(X1, q, n_epoch, Uhat0=X[:,:q], lambda0 = lambda_)
+#     time_2_loop = time.time() - time_1
+#     print(time_2_loop)
+##     print('The initial error was %f and the final error was %f.' %(errs[0],errs[-1]))
+#     print([subspace_error(ccipca.Uhat,U[:,:q]),subspace_error(UU,U[:,:q])])
