@@ -80,13 +80,14 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
     if error_options['compute_population_error'] or error_options['compute_pop_whitening_error']:
         generator_options['return_U'] = True
+        X, U, sigma2 = util.generate_samples(d, q, n + n_test, generator_options)
     else:
         generator_options['return_U'] = False
+        X    = util.generate_samples(d, q, n + n_test, generator_options)
 
 
-    data    = util.generate_samples(d, q, n + n_test, generator_options)
-    X       = data['X'][:,:n]
-    Xtest   = data['X'][:,n:]
+
+    X, Xtest = X[:,:n], X[:,n:]
     XXtest  = Xtest.T.dot(Xtest)
     normsXtest   = np.sum(np.abs(Xtest)**2,0)**0.5#np.linalg.norm(Xtest, 'fro')
     normsXXtest  = np.linalg.norm(XXtest, 'fro')
@@ -114,12 +115,12 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         error_options['error_func_list'].append(('recon_err', lambda Uhat: util.reconstruction_error(Uhat, Xtest, normsXtest)))
 
     if error_options['compute_pop_whitening_error']:
-        assert (pca_algorithm == 'minimax_whitening_PCA') or (pca_algorithm == 'if_minimax_whitening_PCA') or (pca_algorithm == 'minimax_alignment_PCA') or  (pca_algorithm == 'rd_minimax_alignment_PCA'), 'Whitening error can only be computed for minimax_whitening_PCA'
+        assert (pca_algorithm == 'minimax_whitening_PCA') or (pca_algorithm == 'if_minimax_whitening_PCA'), 'Whitening error can only be computed for minimax_whitening_PCA'
         error_options['error_func_list'].append(('pop_whitening_err', lambda Uhat: util.whitening_error(Uhat, data['U'], data['sigma2'])))
 
 
     if error_options['compute_batch_whitening_error']:
-        assert (pca_algorithm == 'minimax_whitening_PCA') or (pca_algorithm == 'if_minimax_whitening_PCA') or (pca_algorithm == 'minimax_alignment_PCA') or (pca_algorithm == 'rd_minimax_alignment_PCA'), 'Whitening error can only be computed for minimax_whitening_PCA'
+        assert (pca_algorithm == 'minimax_whitening_PCA') or (pca_algorithm == 'if_minimax_whitening_PCA', 'Whitening error can only be computed for minimax_whitening_PCA'
         eig_val,V = np.linalg.eigh(X.dot(X.T) / n)
         idx       = np.flip(np.argsort(eig_val),0)
         eig_val   = eig_val[idx]
@@ -146,28 +147,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
     print('Starting simulation with algorithm: ' + pca_algorithm)
 
-    if pca_algorithm == 'minimax_alignment_PCA':
-        tau = algorithm_options['tau']
-
-        if 'step_rule' in algorithm_options:
-            eta = algorithm_options['step_rule']
-        else:
-            eta = None
-
-        if 'step_rule2' in algorithm_options:
-            eta2 = algorithm_options['step_rule2']
-        else:
-            eta2 = eta
-
-        if compute_error:
-            errs = minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T, eta=eta, eta2=eta2)
-        else:
-            with Timer() as t:
-                *_, = minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T, eta = eta, eta2=eta2)
-            print('minimax_alignment_PCA took %f sec.' % t.interval)
-
-
-    elif pca_algorithm == 'CCIPCA':
+    if pca_algorithm == 'CCIPCA':
         if compute_error:
             errs = CCIPCA(X[:,n0:], q, n_epoch, error_options=error_options, Uhat0=Uhat0,ell=0)
         else:
@@ -290,7 +270,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
 if __name__ == "__main__":
 
-    algo_names = ['inv_minimax_PCA', 'CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_whitening_PCA', 'if_minimax_whitening_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
+    algo_names = ['CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_whitening_PCA', 'if_minimax_whitening_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
     output_folder = os.getcwd() + '/test'
 
     error_options = {
@@ -302,7 +282,6 @@ if __name__ == "__main__":
         # 'compute_reconstruction_error' : False,
         #'compute_pop_whitening_error' : True,
         # 'compute_batch_whitening_error' : True,
-        'compute_batch_alignment_error' : True
     }
 
     simulation_options = {
@@ -344,7 +323,7 @@ if __name__ == "__main__":
         for err_name in errs:
             print(err_name +': %f' %(errs[err_name][-1]))
         for err_name in errs:
-            if err_name in ['batch_err', 'population_err', 'pop_whitening_err', 'batch_whitening_err','batch_alignment_err']:
+            if err_name in ['batch_err', 'population_err', 'pop_whitening_err', 'batch_whitening_err']:
                 handle, = plt.plot(np.log10(errs[err_name]), label=err_name)
                 handles.append(handle)
         plt.legend(handles=handles)
