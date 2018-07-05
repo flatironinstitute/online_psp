@@ -1,7 +1,7 @@
 # Title: online_pca_simulations.py
 # Description: A function for testing an online PCA algorithm
 # Author: Victor Minden (vminden@flatironinstitute.org)
-# Notes: Adapted from code by Andrea Giovanni
+# Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
 
 ##############################
@@ -13,11 +13,7 @@ import os
 import util
 import time
 
-# from alt_dynamics_psp import alt_dynamics_PCA
-#from inv_minimax_subspace_projection import inv_minimax_PCA
-#from rd_minimax_subspace_alignment import rd_minimax_alignment_PCA
 from if_minimax_subspace_whitening import if_minimax_whitening_PCA
-from minimax_subspace_alignment import minimax_alignment_PCA
 from minimax_subspace_whitening import minimax_whitening_PCA
 from minimax_subspace_projection import minimax_PCA
 from if_minimax_subspace_projection import if_minimax_PCA
@@ -131,15 +127,6 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         U_batch   = V[:,:q]
         error_options['error_func_list'].append(('batch_whitening_err', lambda Uhat: util.whitening_error(Uhat, U_batch, eig_val[:q,np.newaxis])))
 
-    if error_options['compute_batch_alignment_error']:
-        assert (pca_algorithm == 'minimax_alignment_PCA') or (pca_algorithm == 'rd_minimax_alignment_PCA') or (pca_algorithm == 'CCIPCA'), 'Alignment error can only be computed for minimax_alignment_PCA'
-        eig_val,V = np.linalg.eigh(X.dot(X.T) / n)
-        idx       = np.flip(np.argsort(eig_val),0)
-        eig_val   = eig_val[idx]
-        V         = V[:,idx]
-        U_batch   = V[:,:q]
-        error_options['error_func_list'].append(('batch_alignment_err', lambda Uhat: util.alignment_error(Uhat, U_batch)))
-
 # Main chunk of the code follows: run the appropriate algorithm
     # TODO: May need to be changed to account for when n0 is implemented
     if pca_init:
@@ -178,16 +165,6 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
             with Timer() as t:
                 *_, = minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T, eta = eta, eta2=eta2)
             print('minimax_alignment_PCA took %f sec.' % t.interval)
-
-    # elif pca_algorithm == 'rd_minimax_alignment_PCA':
-    #     tau = algorithm_options['tau']
-    #     if compute_error:
-    #         errs = rd_minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
-    #     else:
-    #         with Timer() as t:
-    #             *_, = rd_minimax_alignment_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
-    #         print('rd_minimax_alignment_PCA took %f sec.' % t.interval)
-
 
 
     elif pca_algorithm == 'CCIPCA':
@@ -249,15 +226,6 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
             with Timer() as t:
                 *_, = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
             print('if_minimax_PCA took %f sec.' % t.interval)
-
-    # elif pca_algorithm == 'inv_minimax_PCA':
-    #     tau = algorithm_options['tau']
-    #     if compute_error:
-    #         errs = inv_minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
-    #     else:
-    #         with Timer() as t:
-    #             *_, = inv_minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
-    #         print('inv_minimax_PCA took %f sec.' % t.interval)
 
     elif pca_algorithm == 'if_minimax_whitening_PCA':
         tau = algorithm_options['tau']
@@ -322,7 +290,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
 if __name__ == "__main__":
 
-    algo_names = ['inv_minimax_PCA', 'rd_minimax_alignment_PCA', 'minimax_alignment_PCA', 'CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_whitening_PCA', 'if_minimax_whitening_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
+    algo_names = ['inv_minimax_PCA', 'CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_whitening_PCA', 'if_minimax_whitening_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
     output_folder = os.getcwd() + '/test'
 
     error_options = {
