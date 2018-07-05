@@ -61,10 +61,11 @@ class CCIPCA_CLASS:
     ====================
     X             -- Numpy array of size d-by-n, where each column corresponds to one observation
     q             -- Dimension of PCA subspace to learn, must satisfy 1 <= q <= d
-    error_options -- A struct with options for computing errors
     Uhat0         -- Initial guess for the eigenspace matrix U, must be of size d-by-q
     lambda0       -- Initial guess for the eigenvalues vector lambda_, must be of size q
     ell           -- Amnesiac parameter (see reference)
+    cython: bool
+        whether to use computationally optimized cython function
 
     Methods:
     ====================

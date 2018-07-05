@@ -7,20 +7,31 @@ Created on Thu Jul  5 17:13:28 2018
 """
 import numpy as np
 #%%
-#try:
-#    profile
-#except:
-#    def profile(a): return a
-
-#for i in range(q):
-#    v          = max(1,t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x # is that OK?
-#    lambda_[i] = np.sqrt(v.dot(v))#np.linalg.norm(v)
-#    Uhat[:,i]  = v/lambda_[i]
-#    # Orthogonalize the data against this approximate eigenvector
-#    x = x - np.dot(x,Uhat[:,i]) * Uhat[:,i]
-#%%
 #@profile
 def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, double[:,:]  Uhat, int q):
+    '''
+    Cythonized version of a coordinate update for the CCIPCA algorithm
+    Parameters:
+    ----------
+    x: ndarray
+        input vector
+    d: int
+        dimensionality of x
+    t: double
+        time step
+    ell: double
+        forgetting factor
+    lambda_: ndarray
+        eigenvalues
+    Uhat: ndarray
+        eigenvector
+
+    Return:
+    --------
+    Uhat
+    lambda_
+
+    '''
     cdef int i, kk
     cdef double v[1000]
     cdef double xU
