@@ -74,6 +74,9 @@ class CCIPCA_CLASS:
     """
 
     def __init__(self, q, d, Uhat0=None, lambda0=None, ell=2, cython=True):
+#        if d>=2000 and cython:
+#            raise Exception('Cython Code is Limited to a 2000 dimensions array: use cython=False')
+
         if Uhat0 is not None:
             assert Uhat0.shape == (d,q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d,q)
             self.Uhat = Uhat0.copy()
@@ -94,7 +97,10 @@ class CCIPCA_CLASS:
         self.d = d
         self.ell = ell
         self.cython = cython
+        self.v = np.zeros(d)
 
+    def fit(self, X):
+        self.Uhat, self.lambda_ = coord_update.coord_update_total(X, X.shape[-1],self.d, np.double(self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q, self.v)
 
     @profile
     def fit_next(self,x_, in_place = False):
@@ -103,11 +109,11 @@ class CCIPCA_CLASS:
         else:
             x = x_
 
-        assert x.shape == (d,)
+        assert x.shape == (self.d,)
 
 
         if self.cython:
-            self.Uhat, self.lambda_ = coord_update.coord_update(x, d, np.double(self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q)
+            self.Uhat, self.lambda_ = coord_update.coord_update(x, self.d, np.double(self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q, self.v)
 #            self.Uhat, self.lambda_ = np.asarray(self.Uhat), np.asarray(self.lambda_)
         else:
             t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
@@ -184,9 +190,9 @@ if __name__ == "__main__":
      from util import generate_samples
 
      # Parameters
-     n       = 5000
-     d       = 1000
-     q       = 100    # Value of q is technically hard-coded below, sorry
+     n       = 1000
+     d       = 4000
+     q       = 1000    # Value of q is technically hard-coded below, sorry
      n_epoch = 1
 
      generator_options = {
@@ -216,6 +222,18 @@ if __name__ == "__main__":
          for x in X1.T:
              ccipca.fit_next(x,in_place = True)
 #             break
+#             errs.append(subspace_error(ccipca.Uhat,U[:,:q]))
+     time_2 = time.time() - time_1
+#     pl.plot(errs)
+     print(time_2)
+     print([subspace_error(np.asarray(ccipca.Uhat),U[:,:q])])
+#%%
+     ccipca = CCIPCA_CLASS(q, d, Uhat0=X[:,:q], lambda0 = lambda_)
+     X1 = X.copy()
+     time_1 = time.time()
+     for n_e in range(n_epoch):
+         ccipca.fit(X)
+
 #             errs.append(subspace_error(ccipca.Uhat,U[:,:q]))
      time_2 = time.time() - time_1
 #     pl.plot(errs)
