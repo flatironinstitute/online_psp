@@ -94,6 +94,7 @@ class CCIPCA_CLASS:
         self.d = d
         self.ell = ell
         self.cython = cython
+        self.workvec_= np.zeros(d)
 
 
     @profile
@@ -107,7 +108,7 @@ class CCIPCA_CLASS:
 
 
         if self.cython:
-            self.Uhat, self.lambda_ = coord_update.coord_update(x, d, np.double(self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q)
+            self.Uhat, self.lambda_ = coord_update.coord_update(x, d, np.double(self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q, self.workvec_)
 #            self.Uhat, self.lambda_ = np.asarray(self.Uhat), np.asarray(self.lambda_)
         else:
             t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
@@ -185,8 +186,8 @@ if __name__ == "__main__":
 
      # Parameters
      n       = 5000
-     d       = 1000
-     q       = 100    # Value of q is technically hard-coded below, sorry
+     d       = 2000
+     q       = 200    # Value of q is technically hard-coded below, sorry
      n_epoch = 1
 
      generator_options = {

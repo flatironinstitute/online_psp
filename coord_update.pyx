@@ -8,7 +8,7 @@ Created on Thu Jul  5 17:13:28 2018
 import numpy as np
 #%%
 #@profile
-def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, double[:,:]  Uhat, int q):
+def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, double[:,:]  Uhat, int q, double[:] v):
     '''
     Cythonized version of a coordinate update for the CCIPCA algorithm
     Parameters:
@@ -33,7 +33,6 @@ def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, do
 
     '''
     cdef int i, kk
-    cdef double v[1000]
     cdef double xU
 
     for i in range(q):
