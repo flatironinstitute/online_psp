@@ -76,11 +76,11 @@ class CCIPCA_CLASS:
     def __init__(self, q, d, Uhat0=None, lambda0=None, ell=2, cython=True):
         if Uhat0 is not None:
             assert Uhat0.shape == (d,q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d,q)
-            self.Uhat = Uhat0.copy()
+            self.Uhat = Uhat0.T.copy()
 
         else:
             # random initalization if not provided
-            self.Uhat = np.random.normal(loc = 0, scale = 1/d, size=(d,q))
+            self.Uhat = np.random.normal(loc = 0, scale = 1/d, size=(d,q)).T
 
         self.t = 1
 
@@ -94,6 +94,7 @@ class CCIPCA_CLASS:
         self.d = d
         self.ell = ell
         self.cython = cython
+        self.workvec_= np.zeros(d)
 
 
     @profile
@@ -107,22 +108,22 @@ class CCIPCA_CLASS:
 
 
         if self.cython:
-            self.Uhat, self.lambda_ = coord_update.coord_update(x, d, np.double(self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q)
+            self.Uhat, self.lambda_ = coord_update.coord_update(x, d, np.double(self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q, self.workvec_)
 #            self.Uhat, self.lambda_ = np.asarray(self.Uhat), np.asarray(self.lambda_)
         else:
             t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
 
             for i in range(q):
-                v          = max(1,t-ell)/(t+1) * lambda_[i] * Uhat[:,i] + (1+ell)/(t+1) * np.dot(x,Uhat[:,i])* x # is that OK?
+                v          = max(1,t-ell)/(t+1) * lambda_[i] * Uhat[i,:] + (1+ell)/(t+1) * np.dot(x,Uhat[i,:])* x # is that OK?
                 lambda_[i] = np.sqrt(v.dot(v))#np.linalg.norm(v)
 #                print(lambda_[i])
-                Uhat[:,i]  = v/lambda_[i]
+                Uhat[i,:]  = v/lambda_[i]
 
                 # Orthogonalize the data against this approximate eigenvector
 #                print('BB')
 #                for kk in range(d):
 #                    print(x[kk])
-                x = x - np.dot(x,Uhat[:,i]) * Uhat[:,i]
+                x = x - np.dot(x,Uhat[i,:]) * Uhat[i,:]
 
 #                for kk in range(d):
 #                    Uhat[kk,i]  = v[kk]/lambda_[i]
@@ -220,7 +221,7 @@ if __name__ == "__main__":
      time_2 = time.time() - time_1
 #     pl.plot(errs)
      print(time_2)
-     print([subspace_error(np.asarray(ccipca.Uhat),U[:,:q])])
+     print([subspace_error(np.asarray(ccipca.Uhat.T),U[:,:q])])
 #%%
      ccipca = CCIPCA_CLASS(q, d, Uhat0=X[:,:q], lambda0 = lambda_, cython=False)
      X1 = X.copy()
@@ -233,7 +234,7 @@ if __name__ == "__main__":
      time_2 = time.time() - time_1
 #     pl.plot(errs)
      print(time_2)
-     print([subspace_error(np.asarray(ccipca.Uhat),U[:,:q])])
+     print([subspace_error(np.asarray(ccipca.Uhat.T),U[:,:q])])
 
      #%%
 #     X1 = X.copy()

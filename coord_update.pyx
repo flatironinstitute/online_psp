@@ -8,7 +8,7 @@ Created on Thu Jul  5 17:13:28 2018
 import numpy as np
 #%%
 #@profile
-def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, double[:,:]  Uhat, int q):
+def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, double[:,:]  Uhat, int q, double[:] v):
     '''
     Cythonized version of a coordinate update for the CCIPCA algorithm
     Parameters:
@@ -33,16 +33,15 @@ def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, do
 
     '''
     cdef int i, kk
-    cdef double v[1000]
     cdef double xU
 
     for i in range(q):
         xU = 0
         for kk in range(d):
-            xU += x[kk]*Uhat[kk,i]
+            xU += x[kk]*Uhat[i,kk]
 
         for kk in range(d):
-            v[kk] = max(1,t-ell)/(t+1) * lambda_[i] * Uhat[kk,i] + (1+ell)/(t+1) * xU*x[kk] # is that OK?
+            v[kk] = max(1,t-ell)/(t+1) * lambda_[i] * Uhat[i,kk] + (1+ell)/(t+1) * xU*x[kk] # is that OK?
 
         lambda_[i] = 0
         for kk in range(d):
@@ -52,18 +51,18 @@ def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, do
 
 #        print('AA')
         for kk in range(d):
-            Uhat[kk,i]  = v[kk]/lambda_[i]
+            Uhat[i,kk]  = v[kk]/lambda_[i]
 #            print(Uhat[kk,i])
 
         xU = 0
         # Orthogonalize the data against this approximate eigenvector
         for kk in range(d):
-            xU += x[kk]*Uhat[kk,i]
+            xU += x[kk]*Uhat[i,kk]
 
 #        print('AA')
         for kk in range(d):
 #            print(x[kk])
-            x[kk] -= xU * Uhat[kk,i]
+            x[kk] -= xU * Uhat[i,kk]
 
 
     return Uhat, lambda_
