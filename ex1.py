@@ -7,7 +7,6 @@ import copy
 
 
 def run_test(simulation_options, algorithm_options):
-    #algo_names = ['inv_minimax_PCA', 'rd_minimax_alignment_PCA', 'minimax_alignment_PCA', 'CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_whitening_PCA', 'if_minimax_whitening_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
     output_folder = os.getcwd() + '/ex'
 
     generator_options = {
@@ -80,6 +79,7 @@ simulation_options ={
     }
 
 algorithm_options = {
+    #algo_names = ['CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_whitening_PCA', 'if_minimax_whitening_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
     'pca_algorithm' : 'minimax_alignment_PCA',
     'tau'           : 0.5,
     'tol'           : 1e-7,

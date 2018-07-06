@@ -122,9 +122,9 @@ def generate_samples(d, q, n, options):
         X  += U.dot( (w.T*sigma).T)
 
         if options['return_U']:
-            return {'X': X, 'U' : U, 'sigma2' : (sigma**2)[:,np.newaxis]}
+            return X, U, (sigma**2)[:,np.newaxis]
         else:
-            return {'X' : X}
+            return X
 
     else:
         assert 0, 'Specified method for data generation is not yet implemented!'
