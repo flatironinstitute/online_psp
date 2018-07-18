@@ -259,10 +259,7 @@ if __name__ == "__main__":
         'rho': 1e-2 / 5,
         'return_U': True
     }
-    synth = generate_samples(d, q, n, generator_options)
-    X = synth['X']
-    U = synth['U']
-    sigma2 = synth['sigma2']
+    X, U, sigma2 = generate_samples(d, q, n, generator_options)
     #     print([X.sum(),U.sum()])
     lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
 
