@@ -6,7 +6,7 @@
 ##############################
 # Imports
 import sys
-sys.path.append('/mnt/home/agiovann/SOFTWARE/online_pca')
+
 import numpy as np
 import util
 from util import subspace_error
@@ -105,7 +105,7 @@ def _iterate_and_compute_errors(X, Minv, W, tau, n_its, n, error_options):
 
 
 
-class IF_minimax_PCA_Class:
+class IF_minimax_PCA_CLASS:
         """
         Parameters:
         ====================
@@ -269,7 +269,7 @@ if __name__ == "__main__":
     #     np.linalg.norm(Xtest, 'fro')
 
     # %%
-    if_mm_pca = IF_minimax_PCA_Class(q, d, W0=X[:, :q].T, Minv0=None, tau=tau)
+    if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=X[:, :q].T, Minv0=None, tau=tau)
     X1 = X.copy()
     time_1 = time.time()
     for n_e in range(n_epoch):
