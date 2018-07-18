@@ -145,7 +145,7 @@ class IncrementalPCA_CLASS:
     fit_next()
     """
 
-    def __init__(self, q, d, Uhat0=None, lambda0=None, tol=1e-7, f=None, use_svd=False):
+    def __init__(self, q, d, Uhat0=None, lambda0=None, tol=1e-7, f=None):
 
         if Uhat0 is not None:
             assert Uhat0.shape == (d,q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d,q)
@@ -167,14 +167,14 @@ class IncrementalPCA_CLASS:
         if f is not None:
             assert (f > 0) and (f < 1), "The parameter f must be between 0 and 1"
         else:
-            f = 1.0 / n
+            # Init as 1.0?
+            f = 1.0 / self.t
 
 
         self.q = q
         self.d = d
         self.f = f
         self.tol = tol
-        self.use_svd = use_svd
 
 
     def fit(self, X):
@@ -195,7 +195,6 @@ class IncrementalPCA_CLASS:
 
         lambda_ = (1 - f) * lambda_
         x = np.sqrt(f) * x
-
         # Project X into current estimate and check residual error
         Uhatx = Uhat.T.dot(x)
         x = x - Uhat.dot(Uhatx)
@@ -220,6 +219,10 @@ class IncrementalPCA_CLASS:
 
         self.Uhat = Uhat
         self.lambda_ = lambda_
+        self.t += 1
+        self.f = 1.0 / self.t
+        # print(Uhat.shape, lambda_.shape, Uhatx.shape, M.shape,d.shape,V.shape)
+        # exit(0)
 
 
 #%%
@@ -231,8 +234,8 @@ if __name__ == "__main__":
 
      # Parameters
      n       = 5000
-     d       = 2000
-     q       = 200
+     d       = 100
+     q       = 10
      n_epoch = 1
 
      generator_options = {
@@ -252,7 +255,7 @@ if __name__ == "__main__":
 #     np.linalg.norm(Xtest, 'fro')
 
      #%%
-     ipca = IncrementalPCA_CLASS(q, d, Uhat0=X[:,:q], lambda0=lambda_1, use_svd=False)
+     ipca = IncrementalPCA_CLASS(q, d, Uhat0=X[:,:q], lambda0=lambda_1)
      X1 = X.copy()
      time_1 = time.time()
      for n_e in range(n_epoch):
