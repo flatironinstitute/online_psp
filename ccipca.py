@@ -188,7 +188,7 @@ if __name__ == "__main__":
     # Parameters
     n = 1000
     d = 4000
-    q = 1000  # Value of q is technically hard-coded below, sorry
+    q = 1000  
     n_epoch = 1
 
     generator_options = {

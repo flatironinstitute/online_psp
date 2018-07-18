@@ -7,7 +7,7 @@
 ##############################
 # Imports
 import sys
-sys.path.append('/mnt/home/agiovann/SOFTWARE/online_pca')
+
 import numpy as np
 import util
 from util import subspace_error
@@ -208,14 +208,7 @@ class IncrementalPCA_CLASS:
             Uhat = np.concatenate((Uhat, x[:, np.newaxis] / normx), 1)
 
         M = np.diag(lambda_) + np.outer(Uhatx, Uhatx.T)
-        if self.use_svd: # this does not seem to give a better time, why?
-            U1,S1,V1 = svd(M, overwrite_a=True)
-            d = np.diag(V1.T.dot(M.dot(V1)))
-            d = np.diag(np.sign(d) * np.diag(S1))
-            V = V1.T
-        else:
-            # TODO are there other faster methods? Get new eigenvectors, is this possibly fast at all? Can we use SVD?
-            d, V = eigh(M, overwrite_a=True)
+        d, V = eigh(M, overwrite_a=True)
 
 
         idx = np.argsort(d)[::-1]
@@ -237,9 +230,9 @@ if __name__ == "__main__":
      from util import generate_samples
 
      # Parameters
-     n       = 1000
+     n       = 5000
      d       = 2000
-     q       = 200    # Value of q is technically hard-coded below, sorry
+     q       = 200
      n_epoch = 1
 
      generator_options = {

@@ -248,7 +248,7 @@ if __name__ == "__main__":
     # Parameters
     n = 5000
     d = 2000
-    q = 200  # Value of q is technically hard-coded below, sorry
+    q = 200  
     n_epoch = 1
     tau = 0.5
 
