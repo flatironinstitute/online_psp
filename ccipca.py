@@ -128,7 +128,7 @@ class CCIPCA_CLASS:
 
             for i in range(q):
               # TODO: is the max okay?
-                v = max(1, t - ell) / (t + 1) * lambda_[i] * Uhat[:, i] + (1 + ell) / (t + 1) * np.dot(x, Uhat[:,i]) * x 
+                v = max(1, t - ell) / (t + 1) * lambda_[i] * Uhat[:, i] + (1 + ell) / (t + 1) * np.dot(x, Uhat[:,i]) * x
                 lambda_[i] = np.sqrt(v.dot(v))  # np.linalg.norm(v)
                 Uhat[:, i] = v / lambda_[i]
                 x = x - np.dot(x, Uhat[:, i]) * Uhat[:, i]
@@ -199,10 +199,7 @@ if __name__ == "__main__":
         'rho': 1e-2 / 5,
         'return_U': True
     }
-    synth = generate_samples(d, q, n, generator_options)
-    X = synth['X']
-    U = synth['U']
-    sigma2 = synth['sigma2']
+    X, U, sigma2 = generate_samples(d, q, n, generator_options)
     #     print([X.sum(),U.sum()])
     lambda_ = np.random.normal(0, 1, (q,)) / np.sqrt(q)
 
