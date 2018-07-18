@@ -24,14 +24,8 @@ def compute_errors(error_options, Uhat, t, errs,M=None):
 
 
 def initialize_errors(error_options, n_its):
+    # Build a dictionary for storing the error information for each specified error function
     return { fun_name : np.zeros(n_its) for (fun_name, _) in error_options['error_func_list'] }
-
-
-def diag_error(M, relative_error_flag=True):
-    err = np.linalg.norm(M - np.diag(np.diag(M)),ord='fro')
-    if relative_error_flag:
-        err = err / np.linalg.norm(M,ord='fro')
-    return err
 
 def subspace_error(Uhat, U, relative_error_flag=True):
 
@@ -57,49 +51,57 @@ def subspace_error(Uhat, U, relative_error_flag=True):
 
 
 
-def whitening_error(Uhat, U, sigma2, relative_error_flag=True):
-    """
-    Parameters:
-    ====================
-    Uhat -- The approximation Uhat of an orthonormal basis for the PCA subspace of size d by q
-    U    -- An orthonormal basis for the PCA subspace of size d by q
-
-    Output:
-    ====================
-    err -- the (relative) Frobenius norm error
-    """
-    B = np.dot(U, sigma2**(-1) * U.T )
-
-    err = np.linalg.norm(np.dot(Uhat, Uhat.T) - B, ord='fro')
-    if relative_error_flag:
-        err /= np.linalg.norm(B,ord='fro')
-    return err
-
-
-def alignment_error(Uhat, U):
-    err = 0
-    for i in range(U.shape[1]):
-        colhat = Uhat[:,i]
-        colhat = colhat / np.linalg.norm(colhat)
-        col    = U[:,i]
-        angle  = col.dot(colhat)
-        err = err + (1-abs(angle))
-
-    return err / U.shape[1]
-
-
-
 def reconstruction_error(Uhat, X, normsX):
+    # Compute the mean relative l2 reconstruction error of the vectors in X
 	res = X - Uhat.dot(Uhat.T.dot(X))
 	res_norms = np.sum(np.abs(res)**2,0)**0.5
 	return np.mean(res_norms / normsX)
-    #return np.linalg.norm(X - Uhat.dot(Uhat.T.dot(X)), 'fro') / normX
 
 def strain_error(Y, XX, normXX):
+    # Compute the strain cost function error relative to norm of X^TX
     return np.linalg.norm(Y.T.dot(Y) - XX, 'fro') / normXX
 
 
-def generate_samples(d, q, n, options):
+def generate_samples(d, q, n, options=None):
+    '''
+    
+    Parameters
+    ----------
+    d: int 
+        number of features
+    
+    q: int
+        number of components
+    
+    n: int 
+        number of samples
+    
+    options: dict
+        specific of each method (see code)
+
+    Returns
+    -------
+        X: ndarray
+            generated samples
+
+        U: ndarray
+            ground truth eigenvectors
+
+        lam: ndarray
+            ground truth eigenvalues
+
+
+    '''
+    # Generate synthetic data samples from a specified model
+    if options is None:
+        options = {
+            'method': 'spiked_covariance',
+            'lambda_q': 5e-1,
+            'normalize': True,
+            'rho': 1e-2 / 5,
+            'return_U': True
+        }
+
     method = options['method']
 
     if method == 'spiked_covariance':
@@ -122,9 +124,11 @@ def generate_samples(d, q, n, options):
         X  += U.dot( (w.T*sigma).T)
 
         if options['return_U']:
-            return X, U, (sigma**2)[:,np.newaxis]
+            lam = (sigma**2)[:,np.newaxis]
+            return X, U, lam
         else:
             return X
 
     else:
         assert 0, 'Specified method for data generation is not yet implemented!'
+
