@@ -5,15 +5,32 @@
 
 ##############################
 # Imports
+import sys
+sys.path.append('/mnt/home/agiovann/SOFTWARE/online_pca')
 import numpy as np
-from scipy.linalg import solve as solve
 import util
-from matplotlib import pyplot as plt
+from util import subspace_error
+import time
+try:
+    profile
+except:
+    def profile(a): return a
+##############################
 ##############################
 
 
-
-
+# from numba.decorators import autojit
+#
+# @autojit
+# def outer_numba(a, b):
+#     m = a.shape[0]
+#     n = b.shape[0]
+#     result = np.empty((m, n), dtype=np.float)
+#     for i in range(m):
+#         for j in range(n):
+#             result[i, j] = a[i]*b[j]
+#     return result
+#
 def eta(t):
 
     """
@@ -86,6 +103,95 @@ def _iterate_and_compute_errors(X, Minv, W, tau, n_its, n, error_options):
 
     return errs
 
+
+
+class IF_minimax_PCA_Class:
+        """
+        Parameters:
+        ====================
+        X             -- Numpy array of size d-by-n, where each column corresponds to one observation
+        q             -- Dimension of PCA subspace to learn, must satisfy 1 <= q <= d
+        tau           -- Learning rate scale parameter for M vs W (see Pehlevan et al.)
+        Minv0         -- Initial guess for the inverse of the lateral weight matrix M, must be of size q-by-q
+        W0            -- Initial guess for the forward weight matrix W, must be of size q-by-d
+
+        Methods:
+        ========
+        fit_next()
+
+        Output:
+        ====================
+        Minv -- Final iterate of the inverse lateral weight matrix, of size q-by-q (sometimes)
+        W    -- Final iterate of the forward weight matrix, of size q-by-d (sometimes)
+        """
+
+        def __init__(self, q, d, tau=0.5, Minv0=None, W0=None):
+
+
+            if Minv0 is not None:
+                assert Minv0.shape == (q, q), "The shape of the initial guess Minv0 must be (q,q)=(%d,%d)" % (q, q)
+                Minv = Minv0
+            else:
+                Minv = np.eye(q)
+
+            if W0 is not None:
+                assert W0.shape == (q, d), "The shape of the initial guess W0 must be (q,d)=(%d,%d)" % (q, d)
+                W = W0
+            else:
+                W = np.random.normal(0, 1.0 / np.sqrt(d), size=(q, d))
+
+
+            self.t = 0
+
+            self.q = q
+            self.d = d
+            self.tau = tau
+            self.Minv = Minv
+            self.W = W
+            # variable to allocate memory and optimize outer product
+            self.outer_W = np.empty_like(W)
+            self.outer_Minv = np.empty_like(Minv)
+
+
+        def fit(self, X):
+            raise Exception("Not Implemented")
+
+        @profile
+        def fit_next(self, x_, in_place=False):
+            if not in_place:
+                x = x_.copy()
+            else:
+                x = x_
+
+            assert x.shape == (self.d,)
+
+            t, tau, W, Minv, q = self.t, self.tau, self.W, self.Minv, self.q
+
+            y = np.dot(Minv, W.dot(x))
+
+            # Plasticity, using gradient ascent/descent
+
+            # W <- W + 2 eta(t) * (y*x' - W)
+            step = eta(t)
+
+            np.outer(2 * step * y, x, self.outer_W)
+            W = (1 - 2 * step) * W + self.outer_W
+
+            # M <- M + eta(self.t)/tau * (y*y' - M), using SMW
+            step = step / tau
+
+            Minv = Minv / (1 - step)
+            z = Minv.dot(y)
+            c = step / (1 + step * np.dot(z, y))
+            np.outer(c * z, z.T, self.outer_Minv)
+            Minv = Minv - self.outer_Minv
+
+            self.Minv = Minv
+            self.W = W
+
+            self.t += 1
+
+
 def if_minimax_PCA(X, q, tau=0.5, n_epoch=1, error_options=None, Minv0=None, W0=None):
 
     """
@@ -133,27 +239,56 @@ def if_minimax_PCA(X, q, tau=0.5, n_epoch=1, error_options=None, Minv0=None, W0=
 
 
 #
-# if __name__ == "__main__":
-#
-#     # Run a test of if_minimax_PCA
-#     print("Testing if_minimax_PCA")
-#     # Parameters
-#     n       = 2000
-#     d       = 10
-#     q       = 3     # Value of q is technically hard-coded below, sorry
-#     n_epoch = 10
-#     tau     = 0.5
-#
-#     X     = np.random.normal(0,1,(d,n))
-#     # Note: Numpy SVD returns V transpose
-#     U,s,Vt = np.linalg.svd(X, full_matrices=False)
-#
-#     s = np.concatenate( ([np.sqrt(3),np.sqrt(2),1], 1e-1*np.random.random(d-3)))
-#     D = np.diag(np.sqrt(n) * s )
-#
-#     X = np.dot(U, np.dot(D, Vt))
-#
-#     Minv,W,errs = if_minimax_PCA(X, q, tau, n_epoch, U=U[:,:q])
-#     print('The initial error was %f and the final error was %f.' %(errs[0],errs[-1]))
-#     # plt.plot(np.log10(errs))
-#     # plt.show()
+if __name__ == "__main__":
+
+    # Run a test of if_minimax_PCA
+    print("Testing if_minimax_PCA")
+    from util import generate_samples
+
+    # Parameters
+    n = 5000
+    d = 2000
+    q = 200  # Value of q is technically hard-coded below, sorry
+    n_epoch = 1
+    tau = 0.5
+
+    generator_options = {
+        'method': 'spiked_covariance',
+        'lambda_q': 5e-1,
+        'normalize': True,
+        'rho': 1e-2 / 5,
+        'return_U': True
+    }
+    synth = generate_samples(d, q, n, generator_options)
+    X = synth['X']
+    U = synth['U']
+    sigma2 = synth['sigma2']
+    #     print([X.sum(),U.sum()])
+    lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
+
+    #     ccipca = CCIPCA_CLASS(q, d)
+    errs = []
+    #     print([X.sum(),U.sum()])
+    #     np.linalg.norm(Xtest, 'fro')
+
+    # %%
+    if_mm_pca = IF_minimax_PCA_Class(q, d, W0=X[:, :q].T, Minv0=None, tau=tau)
+    X1 = X.copy()
+    time_1 = time.time()
+    for n_e in range(n_epoch):
+        for x in X1.T:
+            if_mm_pca.fit_next(x, in_place=True)
+    #             break
+    #             errs.append(subspace_error(ccipca.Uhat,U[:,:q]))
+    time_2 = time.time() - time_1
+    #     pl.plot(errs)
+    print(time_2)
+    print([subspace_error(np.asarray(if_mm_pca.Minv.dot(if_mm_pca.W).T), U[:, :q])])
+    # %%
+    X1 = X.copy()
+    time_1 = time.time()
+    UU, WW = if_minimax_PCA(X1, q, tau, n_epoch, Minv0=None, W0=X[:, :q].T)
+    UU = UU.dot(WW).T
+    time_2_loop = time.time() - time_1
+    print(time_2_loop)
+    print([subspace_error(np.asarray(if_mm_pca.Minv.dot(if_mm_pca.W).T),U[:,:q]),subspace_error(UU,U[:,:q])])
