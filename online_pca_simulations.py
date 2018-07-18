@@ -16,9 +16,6 @@ import time
 from if_minimax_subspace_projection import if_minimax_PCA_CLASS
 from ccipca import CCIPCA_CLASS
 from incremental_pca import incremental_PCA_CLASS
-# from stochastic_gradient_pca import SGA_PCA
-# from subspace_network_learning_pca import SNL_PCA
-# from online_similarity_matching import OSM_PCA
 
 from collections import defaultdict
 from matplotlib import pyplot as plt
@@ -75,7 +72,6 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         # We will make a list of functions that take in the current iterate and return an error measure
         error_options['error_func_list'] = []
 
-
     generator_options = generator_options.copy()
 
     if error_options['compute_population_error']:
@@ -131,33 +127,60 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     print('Starting simulation with algorithm: ' + pca_algorithm)
 
     if pca_algorithm == 'CCIPCA':
-        if compute_error:
-            errs = CCIPCA(X[:,n0:], q, n_epoch, error_options=error_options, Uhat0=Uhat0,ell=0)
-        else:
-            with Timer() as t:
-                *_, = CCIPCA(X[:,n0:], q, n_epoch, Uhat0=Uhat0,ell=0)
-            print('CCIPCA took %f sec.' % t.interval)
-
+        # TODO: Maybe lambda0 should be sorted in descending order?
+        lambda0 = np.abs(np.random.normal(0, 1, (q,)) / np.sqrt(q))
+        pca_fitter = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0)
     elif pca_algorithm == 'incremental_PCA':
         tol = algorithm_options['tol']
-        if compute_error:
-            errs = incremental_PCA(X[:,n0:], q, n_epoch, tol, error_options=error_options, Uhat0=Uhat0)
-        else:
-            with Timer() as t:
-                *_, = incremental_PCA(X[:,n0:], q, n_epoch, tol, Uhat0=Uhat0)
-            print('incremental_PCA took %f sec.' % t.interval)
-
+        lambda0 = np.abs(np.random.normal(0, 1, (q,)) / np.sqrt(q))
+        pca_fitter = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0)
     elif pca_algorithm == 'if_minimax_PCA':
         tau = algorithm_options['tau']
-        if compute_error:
-            errs = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
-        else:
-            with Timer() as t:
-                *_, = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
-            print('if_minimax_PCA took %f sec.' % t.interval)
+        pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None, tau=tau)
+    # elif pca_algorithm == 'if_minimax_PCA':
+    #     tau = algorithm_options['tau']
+    #     if compute_error:
+    #         errs = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
+    #     else:
+    #         with Timer() as t:
+    #             *_, = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
+    #         print('if_minimax_PCA took %f sec.' % t.interval)
 
     else:
-        assert 0, 'You did not specify a valid algorithm.'
+        assert 0, 'You did not specify a valid algorithm.  Please choose one of:\n \tCCIPCA, incremental_PCA, if_minimax_PCA'
+
+
+
+
+
+
+    if compute_error:
+        # Compute errors, do not time algorithms
+        n_skip = error_options['n_skip']
+        # TODO: n_its should actually be something like the number of times the error is computed
+        n_its = X[:,n0:].shape[1] * n_epoch // n_skip + 1 #FIXME
+        errs = util.initialize_errors(error_options, n_its)
+        i = 0
+        for n_e in range(n_epoch):
+            for x in X[:,n0:].T:
+                pca_fitter.fit_next(x, in_place=True)
+                i+=1
+                if i == n_skip:
+                    # Compute errors
+                    i = 0
+                    # TODO: implement this in each class
+                    # Uhat = pca_fitter.get_components()
+    else:
+        # Do timing, do not compute errors
+        # TODO: save the timing information, don't just print it out
+        with Timer() as t:
+            for n_e in range(n_epoch):
+                for x in X[:,n0:].T:
+                    pca_fitter.fit_next(x, in_place=True)
+        print('%s took %f sec.' % (pca_algorithm, t.interval))
+
+
+
 
 
     # Output results to some specified folder with information filename (but long)
