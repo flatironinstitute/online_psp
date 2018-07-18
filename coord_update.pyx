@@ -40,7 +40,6 @@ def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, do
     '''
 
     cdef int i, kk
-#    cdef double v[1000000]
     cdef double xU
     with nogil:
         for i in range(q):

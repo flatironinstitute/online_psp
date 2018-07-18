@@ -127,8 +127,8 @@ class CCIPCA_CLASS:
             t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
 
             for i in range(q):
-                v = max(1, t - ell) / (t + 1) * lambda_[i] * Uhat[:, i] + (1 + ell) / (t + 1) * np.dot(x, Uhat[:,
-                                                                                                          i]) * x  # is that OK?
+              # TODO: is the max okay?
+                v = max(1, t - ell) / (t + 1) * lambda_[i] * Uhat[:, i] + (1 + ell) / (t + 1) * np.dot(x, Uhat[:,i]) * x 
                 lambda_[i] = np.sqrt(v.dot(v))  # np.linalg.norm(v)
                 Uhat[:, i] = v / lambda_[i]
                 x = x - np.dot(x, Uhat[:, i]) * Uhat[:, i]
