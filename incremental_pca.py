@@ -161,7 +161,7 @@ class IncrementalPCA_CLASS:
             assert lambda0.shape == (q,), "The shape of the initial guess lambda0 must be (q,)=(%d,)" % (q)
             self.lambda_ = lambda0.copy()
         else:
-            self.lambda_= np.random.normal(0,1,(q,)) / np.sqrt(q)
+            self.lambda_= np.abs(np.random.normal(0,1,(q,))) / np.sqrt(q)
 
 
         if f is not None:
@@ -189,7 +189,8 @@ class IncrementalPCA_CLASS:
             x = x_
 
         assert x.shape == (self.d,)
-
+        self.t += 1
+        self.f = 1.0 / self.t
 
         t, f, lambda_, Uhat, q, tol = self.t, self.f, self.lambda_, self.Uhat, self.q, self.tol
 
@@ -219,8 +220,8 @@ class IncrementalPCA_CLASS:
 
         self.Uhat = Uhat
         self.lambda_ = lambda_
-        self.t += 1
-        self.f = 1.0 / self.t
+
+
         # print(Uhat.shape, lambda_.shape, Uhatx.shape, M.shape,d.shape,V.shape)
         # exit(0)
 
@@ -233,7 +234,7 @@ if __name__ == "__main__":
      from util import generate_samples
 
      # Parameters
-     n       = 5000
+     n       = 50000
      d       = 100
      q       = 10
      n_epoch = 1
@@ -255,7 +256,10 @@ if __name__ == "__main__":
 #     np.linalg.norm(Xtest, 'fro')
 
      #%%
-     ipca = IncrementalPCA_CLASS(q, d, Uhat0=X[:,:q], lambda0=lambda_1)
+     Uhat0 = X[:,:q]
+     for i in range(q):
+         Uhat0[:,i] /= np.linalg.norm(Uhat0[:,i])
+     ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
      X1 = X.copy()
      time_1 = time.time()
      for n_e in range(n_epoch):
