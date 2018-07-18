@@ -1,5 +1,5 @@
 # Title: ccipca.py
-# Description: A function for PCA using the Candid Covariance-Free Incrmental PCA approach
+# Description: A function for PCA using the Candid Covariance-Free Incremental PCA approach
 # Author: Victor Minden (vminden@flatironinstitute.org) and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
 # Notes: Adapted from code by Andrea Giovannucci and Cengiz Pehlevan
 # Reference: J. Weng, Y. Zhang, and W. S. Hwang, "Candid covariance-free incremental principal component analysis", IEEE Trans. Pattern. Anal. Mach. Intell., vol 25, no. 8, pp. 1034-1040, Aug. 2003
@@ -8,7 +8,6 @@
 # Imports
 import sys
 
-sys.path.append('/mnt/home/agiovann/SOFTWARE/online_pca')
 import numpy as np
 from scipy.linalg import solve as solve
 import util
