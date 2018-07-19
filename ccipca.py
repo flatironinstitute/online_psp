@@ -112,7 +112,7 @@ class CCIPCA_CLASS:
         return components
 
 
-# %%
+#%%
 if __name__ == "__main__":
     # %%
     print('Testing CCIPCA')

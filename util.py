@@ -5,6 +5,8 @@
 ##############################
 # Imports
 import numpy as np
+from scipy.io import loadmat
+from sklearn.decomposition import PCA
 ##############################
 
 def compute_errors(error_options, Uhat, t, errs,M=None):
@@ -60,6 +62,51 @@ def reconstruction_error(Uhat, X, normsX):
 def strain_error(Y, XX, normXX):
     # Compute the strain cost function error relative to norm of X^TX
     return np.linalg.norm(Y.T.dot(Y) - XX, 'fro') / normXX
+
+
+
+def load_dataset(dataset_name = './datasets/ATT_faces_112_92.mat',return_U = True, q = None):
+    '''
+
+    Parameters
+    ----------
+    dataset_name: str
+        name of dataset
+
+    return_U: bool
+        whether to also compute the eigenvetor matrix
+
+    Returns
+    -------
+        X: ndarray
+            generated samples
+
+        U: ndarray
+            ground truth eigenvectors
+
+        lam: ndarray
+            ground truth eigenvalues
+
+    '''
+
+    ld = loadmat(dataset_name)
+    fea = ld['fea']
+    gnd = ld['gnd']
+    # center data
+    X = fea.astype(np.float)
+    X -= X.mean(0)[None, :]
+    if return_U:
+        if q is None:
+            q = X.shape[-1]
+        pca = PCA(n_components=q)
+        pca.fit(X)
+        U = pca.components_
+        lam = pca.explained_variance_
+        return X, U, lam
+
+    else:
+        return X
+
 
 
 def generate_samples(d, q, n, options=None):
