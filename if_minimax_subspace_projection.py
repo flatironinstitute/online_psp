@@ -52,7 +52,7 @@ class IF_minimax_PCA_CLASS:
     W    -- Final iterate of the forward weight matrix, of size q-by-d (sometimes)
     """
 
-    def __init__(self, q, d, tau=0.5, Minv0=None, W0=None):
+    def __init__(self, q, d, tau=0.5, Minv0=None, W0=None, learning_rate=None):
 
         if Minv0 is not None:
             assert Minv0.shape == (q, q), "The shape of the initial guess Minv0 must be (q,q)=(%d,%d)" % (q, q)
@@ -66,6 +66,10 @@ class IF_minimax_PCA_CLASS:
         else:
             W = np.random.normal(0, 1.0 / np.sqrt(d), size=(q, d))
 
+        if learning_rate is not None:
+            self.eta = learning_rate
+        else:
+            self.eta = eta
         self.t = 0
 
         self.q = q
@@ -90,7 +94,7 @@ class IF_minimax_PCA_CLASS:
         # Plasticity, using gradient ascent/descent
 
         # W <- W + 2 eta(t) * (y*x' - W)
-        step = eta(t)
+        step = self.eta(t)
 
         np.outer(2 * step * y, x, self.outer_W)
         W = (1 - 2 * step) * W + self.outer_W
