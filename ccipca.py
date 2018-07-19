@@ -37,7 +37,7 @@ class CCIPCA_CLASS:
     fit_next()
     """
 
-    def __init__(self, q, d, Uhat0=None, lambda0=None, ell=2, cython=True, in_place=False):
+    def __init__(self, q, d, Uhat0=None, lambda0=None, ell=2, cython=True, in_place=False,verbose =False):
         #        if d>=2000 and cython:
         #            raise Exception('Cython Code is Limited to a 2000 dimensions array: use cython=False')
         if cython == 'auto':
@@ -45,7 +45,9 @@ class CCIPCA_CLASS:
                 cython = False
             else:
                 cython = True
-        print('Using Cython:' + str(cython))
+        if verbose:
+            print('Using Cython:' + str(cython))
+
         if Uhat0 is not None:
             assert Uhat0.shape == (d, q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d, q)
             self.Uhat = Uhat0.copy()
@@ -88,13 +90,16 @@ class CCIPCA_CLASS:
                                                                 self.lambda_, self.Uhat, self.q, self.v)
         else:
             t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
-
+            old_wt = max(1,t-ell) / (t+1)
             for i in range(q):
               # TODO: is the max okay?
-                v = max(1, t - ell) / (t + 1) * lambda_[i] * Uhat[:, i] + (1 + ell) / (t + 1) * np.dot(x, Uhat[:,i]) * x
+                v = old_wt * lambda_[i] * Uhat[:, i] + (1-old_wt) * np.dot(x, Uhat[:,i]) * x
                 lambda_[i] = np.sqrt(v.dot(v))  # np.linalg.norm(v)
                 Uhat[:, i] = v / lambda_[i]
                 x = x - np.dot(x, Uhat[:, i]) * Uhat[:, i]
+            # print(old_wt)
+            # if t > 50:
+            #     exit(0)
             self.Uhat = Uhat
             self.lambda_ = lambda_
         self.t += 1
