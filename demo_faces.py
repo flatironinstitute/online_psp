@@ -10,14 +10,22 @@ from ccipca import CCIPCA_CLASS
 from if_minimax_subspace_projection import IF_minimax_PCA_CLASS
 import numpy as np
 import pylab as pl
-from util import generate_samples
 import time
 from util import subspace_error
 #%% GENERATE TEST DATA
 # Parameters
 #%%
+ld = loadmat('./datasets/ATT_faces_112_92.mat')
+fea = ld['fea']
+gnd = ld['gnd']
+
+#%%
+X = fea.astype(np.float)
+X -= X.mean(0)[None,:]
+
+#%%
 n_epoch = 1
-d, q, n = 200, 20, 1000
+d, q, n = X.shape[0], 20, X.shape[1]
 X, U, sigma2 = generate_samples(d, q, n)
 lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
 # Parameters IF_minimax_PCA_CLASS
