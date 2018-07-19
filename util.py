@@ -65,7 +65,7 @@ def strain_error(Y, XX, normXX):
 
 
 
-def load_dataset(dataset_name = './datasets/ATT_faces_112_92.mat',return_U = True, q = None):
+def load_dataset(dataset_name ,return_U = True, q = None):
     '''
 
     Parameters
@@ -91,7 +91,7 @@ def load_dataset(dataset_name = './datasets/ATT_faces_112_92.mat',return_U = Tru
 
     ld = loadmat(dataset_name)
     fea = ld['fea']
-    gnd = ld['gnd']
+    # gnd = ld['gnd']
     # center data
     X = fea.astype(np.float)
     X -= X.mean(0)[None, :]
@@ -100,9 +100,9 @@ def load_dataset(dataset_name = './datasets/ATT_faces_112_92.mat',return_U = Tru
             q = X.shape[-1]
         pca = PCA(n_components=q)
         pca.fit(X)
-        U = pca.components_
+        U = pca.components_.T
         lam = pca.explained_variance_
-        return X, U, lam
+        return X.T, U, lam
 
     else:
         return X
