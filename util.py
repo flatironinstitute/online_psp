@@ -62,8 +62,46 @@ def strain_error(Y, XX, normXX):
     return np.linalg.norm(Y.T.dot(Y) - XX, 'fro') / normXX
 
 
-def generate_samples(d, q, n, options):
+def generate_samples(d, q, n, options=None):
+    '''
+    
+    Parameters
+    ----------
+    d: int 
+        number of features
+    
+    q: int
+        number of components
+    
+    n: int 
+        number of samples
+    
+    options: dict
+        specific of each method (see code)
+
+    Returns
+    -------
+        X: ndarray
+            generated samples
+
+        U: ndarray
+            ground truth eigenvectors
+
+        lam: ndarray
+            ground truth eigenvalues
+
+
+    '''
     # Generate synthetic data samples from a specified model
+    if options is None:
+        options = {
+            'method': 'spiked_covariance',
+            'lambda_q': 5e-1,
+            'normalize': True,
+            'rho': 1e-2 / 5,
+            'return_U': True
+        }
+
     method = options['method']
 
     if method == 'spiked_covariance':
@@ -86,9 +124,11 @@ def generate_samples(d, q, n, options):
         X  += U.dot( (w.T*sigma).T)
 
         if options['return_U']:
-            return X, U, (sigma**2)[:,np.newaxis]
+            lam = (sigma**2)[:,np.newaxis]
+            return X, U, lam
         else:
             return X
 
     else:
         assert 0, 'Specified method for data generation is not yet implemented!'
+
