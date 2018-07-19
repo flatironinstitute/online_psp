@@ -102,9 +102,13 @@ class CCIPCA_CLASS:
             self.lambda_ = lambda_
         self.t += 1
 
-    def get_components(self):
+
+    def get_components(self, orthogonalize=True):
         '''
         Extract components from object
+
+        orthogonalize: bool
+            whether to orthogonalize when computing the error
 
         Returns
         -------
@@ -112,8 +116,10 @@ class CCIPCA_CLASS:
         '''
 
         components = np.asarray(self.Uhat)
-        return components
+        if orthogonalize:
+            components, _ = np.linalg.qr(components)
 
+        return components
 
 #%%
 if __name__ == "__main__":
