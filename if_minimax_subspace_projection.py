@@ -113,9 +113,13 @@ class IF_minimax_PCA_CLASS:
 
         self.t += 1
 
-    def get_components(self):
+
+    def get_components(self, orthogonalize=True):
         '''
         Extract components from object
+
+        orthogonalize: bool
+            whether to orthogonalize when computing the error
 
         Returns
         -------
@@ -123,6 +127,9 @@ class IF_minimax_PCA_CLASS:
         '''
 
         components = np.asarray(self.Minv.dot(self.W).T)
+        if orthogonalize:
+            components, _ = np.linalg.qr(components)
+
         return components
 
 

@@ -52,8 +52,8 @@ for dset in ['ATT_faces_112_92.mat','ORL_32x32.mat','YaleB_32x32.mat']:
         pl.semilogy(errs[name])
         pl.xlabel('relative subspace error')
         pl.xlabel('samples')
-        print('Elapsed time ' + name +':' + str(times[name]))
-        print('Final subspace error ' + name +':' + str(subspace_error(np.asarray(ipca.Uhat), U[:, :q])))
+        print('Elapsed time ' + name + ':' + str(times[name]))
+        print('Final subspace error ' + name + ':' + str(subspace_error(np.asarray(ipca.get_components()), U[:, :q])))
 
     pl.legend(algorithms.keys())
     # pl.show()
