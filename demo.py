@@ -27,7 +27,7 @@ compute_error = True
 #%% RUN ALGORITHMS
 errs  = []
 # Normalize initial guess
-Uhat0 = X[:, :q]/(X[:, :q]**2).sum(0)
+Uhat0 = X[:, :q]
 eta = None#lambda t: 1e-3
 ipca      = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
 if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None, tau=tau,learning_rate=eta)

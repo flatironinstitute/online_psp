@@ -7,6 +7,7 @@
 import numpy as np
 from scipy.io import loadmat
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import normalize
 ##############################
 
 def compute_errors(error_options, Uhat, t, errs,M=None):
@@ -95,6 +96,10 @@ def load_dataset(dataset_name ,return_U = True, q = None):
     # center data
     X = fea.astype(np.float)
     X -= X.mean(0)[None, :]
+
+    # X = normalize(X, axis=0)
+    X /= np.mean(np.sqrt(np.sum(X**2,0)))
+
     if return_U:
         if q is None:
             q = X.shape[-1]

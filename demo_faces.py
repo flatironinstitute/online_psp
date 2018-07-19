@@ -12,15 +12,16 @@ import numpy as np
 import pylab as pl
 import time
 from util import subspace_error, load_dataset
-
+q = 5
 for dset in ['ATT_faces_112_92.mat','ORL_32x32.mat','YaleB_32x32.mat']:
+    print('** ' + dset)
     pl.figure()
     #%% GENERATE TEST DATA
     X, U, sigma2 = load_dataset(dataset_name='./datasets/'+dset, return_U=True, q=None)
 
     #%%
     n_epoch = 1
-    d, q, n = X.shape[0], 20, X.shape[1]
+    d, n = X.shape[0], X.shape[1]
     lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
     # Parameters IF_minimax_PCA_CLASS
     tau = 0.5
@@ -29,7 +30,7 @@ for dset in ['ATT_faces_112_92.mat','ORL_32x32.mat','YaleB_32x32.mat']:
 
     #%% RUN ALGORITHMS
     errs = []
-    Uhat0 = X[:, :q]/(X[:, :q]**2).sum(0)
+    Uhat0 = X[:, :q]/np.sqrt(X[:, :q]**2).sum(0)
     ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
     if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None, tau=tau)
     ccipca = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1, cython='auto', in_place=False)
@@ -48,13 +49,16 @@ for dset in ['ATT_faces_112_92.mat','ORL_32x32.mat','YaleB_32x32.mat']:
         errs[name] = err
         times[name] = time_2
     #%% DISPLAY RESULTS
-    for name in algorithms.keys():
+    pl.close('all')
+    keys = list(algorithms.keys())
+    keys.sort()
+    for name in keys:
         pl.semilogy(errs[name])
         pl.xlabel('relative subspace error')
         pl.xlabel('samples')
-        print('Elapsed time ' + name + ':' + str(times[name]))
+        # print('Elapsed time ' + name + ':' + str(times[name]))
         print('Final subspace error ' + name + ':' + str(errs[name][-1]))
 
-    pl.legend(algorithms.keys())
+    pl.legend(keys)
     # pl.show()
-    pl.savefig(dset[:-3]+'pdf')
+    pl.savefig(dset[:-3]+'png')
