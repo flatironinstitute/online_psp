@@ -62,7 +62,7 @@ class CCIPCA_CLASS:
             assert lambda0.shape == (q,), "The shape of the initial guess lambda0 must be (q,)=(%d,)" % (q)
             self.lambda_ = lambda0.copy()
         else:
-            self.lambda_ = np.random.normal(0, 1, (q,)) / np.sqrt(q)
+            self.lambda_ = np.abs(np.random.normal(0, 1, (q,)) / np.sqrt(q))
 
         self.q = q
         self.d = d
@@ -97,9 +97,7 @@ class CCIPCA_CLASS:
                 lambda_[i] = np.sqrt(v.dot(v))  # np.linalg.norm(v)
                 Uhat[:, i] = v / lambda_[i]
                 x = x - np.dot(x, Uhat[:, i]) * Uhat[:, i]
-            # print(old_wt)
-            # if t > 50:
-            #     exit(0)
+
             self.Uhat = Uhat
             self.lambda_ = lambda_
         self.t += 1
