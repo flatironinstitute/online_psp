@@ -12,9 +12,11 @@ import numpy as np
 import pylab as pl
 import time
 from util import subspace_error
+from scipy.io import loadmat
 #%% GENERATE TEST DATA
 # Parameters
 #%%
+# TODO: add autodownloader
 ld = loadmat('./datasets/ATT_faces_112_92.mat')
 fea = ld['fea']
 gnd = ld['gnd']
