@@ -42,7 +42,10 @@ for name, algo in algorithms.items():
     for n_e in range(n_epoch):
         for x in X.T:
             algo.fit_next(x)
-            err.append(subspace_error(algo.get_components(), U[:, :q]))
+            Uhat = algo.get_components()
+            # TODO: decide if we want to orthogonalize the iterate or not
+            Uhat,r = np.linalg.qr(Uhat)
+            err.append(subspace_error(Uhat, U[:, :q]))
     time_2      = time.time() - time_1
     errs[name]  = err
     times[name] = time_2
