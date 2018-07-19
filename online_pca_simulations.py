@@ -13,9 +13,9 @@ import os
 import util
 import time
 
-from if_minimax_subspace_projection import if_minimax_PCA_CLASS
+from if_minimax_subspace_projection import IF_minimax_PCA_CLASS
 from ccipca import CCIPCA_CLASS
-from incremental_pca import incremental_PCA_CLASS
+from incremental_pca import IncrementalPCA_CLASS
 
 from collections import defaultdict
 from matplotlib import pyplot as plt
@@ -79,7 +79,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         X, U_pop, sigma2 = util.generate_samples(d, q, n + n_test, generator_options)
     else:
         generator_options['return_U'] = False
-        X, U_pop, sigma2 = util.generate_samples(d, q, n + n_test, generator_options)
+        X = util.generate_samples(d, q, n + n_test, generator_options)
 
     X, Xtest = X[:,:n], X[:,n:]
     XXtest   = Xtest.T.dot(Xtest)
@@ -129,7 +129,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     if pca_algorithm == 'CCIPCA':
         # TODO: Maybe lambda0 should be sorted in descending order?
         lambda0 = np.abs(np.random.normal(0, 1, (q,)) / np.sqrt(q))
-        pca_fitter = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0)
+        pca_fitter = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0, in_place=True)
     elif pca_algorithm == 'incremental_PCA':
         tol = algorithm_options['tol']
         lambda0 = np.abs(np.random.normal(0, 1, (q,)) / np.sqrt(q))
@@ -156,29 +156,30 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
     if compute_error:
         # Compute errors, do not time algorithms
-        n_skip = error_options['n_skip']
-        # TODO: n_its should actually be something like the number of times the error is computed
-        n_its = X[:,n0:].shape[1] * n_epoch // n_skip + 1 #FIXME
+        n_its =  X[:,n0:].shape[1] * n_epoch
         errs = util.initialize_errors(error_options, n_its)
         i = 0
         for n_e in range(n_epoch):
             for x in X[:,n0:].T:
-                pca_fitter.fit_next(x, in_place=True)
+                pca_fitter.fit_next(x)
+                Uhat = pca_fitter.get_components()
+                util.compute_errors(error_options, Uhat, i, errs)
                 i+=1
-                if i == n_skip:
-                    # Compute errors
-                    i = 0
-                    # TODO: implement this in each class
+                # TODO: implement skip
+                # if i == n_skip:
+                    # # Compute errors
+                    # i = 0
+                    # # TODO: implement this in each class
                     # Uhat = pca_fitter.get_components()
+                    # util.compute_errors(error_options, Uhat, t, errs)
     else:
         # Do timing, do not compute errors
         # TODO: save the timing information, don't just print it out
         with Timer() as t:
             for n_e in range(n_epoch):
                 for x in X[:,n0:].T:
-                    pca_fitter.fit_next(x, in_place=True)
+                    pca_fitter.fit_next(x)
         print('%s took %f sec.' % (pca_algorithm, t.interval))
-
 
 
 
@@ -223,74 +224,63 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         return t.interval
 
 
-if __name__ == "__main__":
+def run_test(simulation_options, algorithm_options):
+    output_folder = os.getcwd() + '/test'
 
-    # algo_names = ['CCIPCA', 'SNL_PCA', 'SGA_PCA', 'incremental_PCA', 'minimax_whitening_PCA', 'if_minimax_whitening_PCA', 'minimax_PCA', 'if_minimax_PCA', 'OSM_PCA']
-    # output_folder = os.getcwd() + '/test'
-    #
-    # error_options = {
-    #     'n_skip' : 1000, ##NOT IMPLEMENTED
-    #     'orthogonalize_iterate' : False,
-    #     'compute_batch_error' : True,
-    #     'compute_population_error' : True,
-    #     # 'compute_strain_error' : False,
-    #     # 'compute_reconstruction_error' : False,
-    #     #'compute_pop_whitening_error' : True,
-    #     # 'compute_batch_whitening_error' : True,
-    # }
-    #
-    # simulation_options = {
-    #     'd' : 50,
-    #     'q' : 32,
-    #     'n' : 100000,#4096,
-    #     'n0': 0, ##NOT IMPLEMENTED
-    #     'n_epoch': 1,
-    #     'n_test' : 256,
-    #     'error_options' : error_options,
-    #     'pca_init': False,
-    #     'init_ortho': True
-    # }
-    #
-    # generator_options = {
-    #     'method'   : 'spiked_covariance',
-    #     'lambda_q' : 5e-1,
-    #     'normalize': True,
-    #     'rho'      : 1e-2/5
-    # }
-    #
-    # algorithm_options = {
-    #     'pca_algorithm' : algo_names[2],
-    #     'tau'           : 0.5,
-    #     'tol'           : 1e-7
-    # }
-    #
-    # if algorithm_options['pca_algorithm'] == 'minimax_whitening_PCA' or algorithm_options['pca_algorithm'] == 'if_minimax_whitening_PCA':
-    #     algorithm_options['tau'] = simulation_options['q'] * algorithm_options['tau']
-    #
-    # errs = run_simulation(output_folder, simulation_options, generator_options, algorithm_options)
-    #
-    # if any(error_options):
-    #     handles = []
-    #
-    #     plt.figure(1)
-    #     plt.subplot(211)
-    #     plt.title(algorithm_options['pca_algorithm'])
-    #     for err_name in errs:
-    #         print(err_name +': %f' %(errs[err_name][-1]))
-    #     for err_name in errs:
-    #         if err_name in ['batch_err', 'population_err', 'pop_whitening_err', 'batch_whitening_err']:
-    #             handle, = plt.plot(np.log10(errs[err_name]), label=err_name)
-    #             handles.append(handle)
-    #     plt.legend(handles=handles)
-    #     plt.ylabel('Error (log10 scale)')
-    #
-    #     handles = []
-    #     plt.subplot(212)
-    #     for err_name in errs:
-    #         if err_name in ['strain_err', 'recon_err']:
-    #             handle, = plt.plot(errs[err_name], label=err_name)
-    #             handles.append(handle)
-    #     plt.legend(handles=handles)
-    #     plt.ylabel('Error (linear scale)')
-    #     plt.xlabel('Iteration')
-    #     plt.show()
+    generator_options = {
+        'method': 'spiked_covariance',
+        'lambda_q': 5e-1,
+        'normalize': True,
+        'rho': 1e-2/5
+    }
+
+    errs = run_simulation(output_folder, simulation_options,
+                          generator_options, algorithm_options)
+
+    handles = []
+
+    fig = plt.figure(1)
+    ax  = fig.add_subplot(1,1,1)
+    plt.title(algorithm_options['pca_algorithm'])
+    for err_name in errs:
+        print(err_name + ': %f' % (errs[err_name][-1]))
+        handle, = ax.plot(errs[err_name], label=err_name)
+        handles.append(handle)
+    plt.legend(handles=handles)
+    plt.ylabel('Error (log10 scale)')
+    plt.xlabel('Iteration')
+    #plt.ylim(ymax=1, ymin=0)
+    ax.set_yscale('log')
+    plt.show()
+
+
+
+
+if __name__ == "__main__":
+    error_options = {
+        'n_skip': 1,
+        'orthogonalize_iterate': False,
+        'compute_batch_error': True,
+        'compute_population_error' : True,
+        'compute_strain_error' : True,
+        'compute_reconstruction_error' : True
+    }
+
+    simulation_options = {
+        'd': 200,
+        'q': 20,
+        'n': 1000,
+        'n0': 0,
+        'n_epoch': 1,
+        'n_test': 256,
+        'error_options': error_options,
+        'pca_init': False,
+        'init_ortho': True
+    }
+
+    algorithm_options = {
+        'pca_algorithm': 'if_minimax_PCA',
+        'tau': 0.5,
+        'tol': 1e-7
+    }
+    run_test(simulation_options, algorithm_options)

@@ -46,9 +46,9 @@ def coord_update(double[:] x, int d, double t, double ell, double[:] lambda_, do
             xU = 0
             for kk in range(d):
                 xU += x[kk]*Uhat[kk,i]
-
+            old_wt = max(1, t-ell)/(t+1)
             for kk in range(d):
-                v[kk] = max(1,t-ell)/(t+1) * lambda_[i] * Uhat[kk,i] + (1+ell)/(t+1) * xU*x[kk] # is that OK?
+                v[kk] = old_wt * lambda_[i] * Uhat[kk,i] + (1-old_wt) * xU*x[kk] # is that OK?
 
             lambda_[i] = 0
             for kk in range(d):
