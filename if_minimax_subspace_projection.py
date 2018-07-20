@@ -137,19 +137,29 @@ class IF_minimax_PCA_CLASS:
 if __name__ == "__main__":
 #%%
     print('Testing IF_MINMAX_PROJECTION')
-    from util import generate_samples
+    from util import generate_samples, get_scale_data_factor
     import pylab as pl
 
     # Parameters
     n_epoch = 1
     tau = 0.5
-    d, q, n = 20, 5, 1000
-    X, U, sigma2 = generate_samples(d, q, n)
-    lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
+    q = 100
+    spiked_covariance_test = True
+    scale_data = True
+    scale_with_log_q = True
+    if spiked_covariance_test:
+        d,  n = 1000, 5000
+        X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data, scale_with_log_q = scale_with_log_q)
+
+    else:
+        X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', scale_data=scale_data, scale_with_log_q = scale_with_log_q)
+        d, n = X.shape
+    # adjust eigenvalues magnitude according to how data is scaled
+    lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
     Uhat0 = X[:, :q] / (X[:, :q] ** 2).sum(0)
     # %%
     errs = []
-    if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=X[:, :q].T, Minv0=None, tau=tau)
+    if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None, tau=tau)
     time_1 = time.time()
     for n_e in range(n_epoch):
         for x in X.T:

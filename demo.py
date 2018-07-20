@@ -11,48 +11,68 @@ from if_minimax_subspace_projection import IF_minimax_PCA_CLASS
 import numpy as np
 import pylab as pl
 import time
-from util import generate_samples, subspace_error   
+from util import generate_samples, subspace_error, get_scale_data_factor
 #%% GENERATE TEST DATA
 # Parameters
 #%%
 n_epoch = 1
-d, q, n = 200, 20, 1000
-X, U, sigma2 = generate_samples(d, q, n)
-lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
+d, q, n = 300, 50, 5000
+X, U, sigma2 = generate_samples(q, n, d)
+lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
 # Parameters IF_minimax_PCA_CLASS
 tau = 0.5
 # Simulation parameters
 compute_error = True
+standardize = True
+method_scaling = 'norm'
 
+
+if standardize:
+    scale_factor = get_scale_data_factor(X)
+    X, U, sigma2 = X * scale_factor, U, sigma2 * (scale_factor ** 2)
+    # adjust eigenvalues magnitude according to how data is scaled
+    # lambda_1 *= scale_factor ** 2
+
+Uhat0 = X[:, :q] / (X[:, :q] ** 2).sum(0)
 #%% RUN ALGORITHMS
 errs  = []
 # Normalize initial guess
-Uhat0 = X[:, :q]
-eta = None#lambda t: 1e-3
+
+eta = None #lambda t: 1e-3
 ipca      = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
 if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None, tau=tau,learning_rate=eta)
 ccipca    = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1, cython=False, in_place=False)
-
 algorithms = {'ipca':ipca, 'if_mm_pca':if_mm_pca, 'ccipca':ccipca}
 
+print('Starting online algorithms')
 times = {}
 errs  = {}
 for name, algo in algorithms.items():
+    print(name)
     err    = []
     time_1 = time.time()
+    counter = 0
     for n_e in range(n_epoch):
         for x in X.T:
+            if counter%200 == 0:
+                print(counter)
+
+            counter += 1
             algo.fit_next(x)
             Uhat = algo.get_components()
             # TODO: decide if we want to orthogonalize the iterate or not
             Uhat,r = np.linalg.qr(Uhat)
-            err.append(subspace_error(Uhat, U[:, :q]))
+            if compute_error:
+                err.append(subspace_error(Uhat, U[:, :q]))
     time_2      = time.time() - time_1
     errs[name]  = err
     times[name] = time_2
 
 #%% DISPLAY RESULTS
-for name in algorithms.keys():
+keys = list(algorithms.keys())
+
+keys.sort()
+for name in keys:
     pl.semilogy(errs[name])
     pl.xlabel('relative subspace error')
     pl.xlabel('samples')
@@ -61,7 +81,9 @@ for name in algorithms.keys():
     print('Elapsed time: ' + str(times[name]))
     print('Final subspace error: ' + str(subspace_error(np.asarray(Uhat), U[:, :q])) + '\n')
 
-pl.legend(algorithms.keys())
+pl.legend(keys)
 pl.show()
+pl.savefig('spike_cov.png')
+
 
 
