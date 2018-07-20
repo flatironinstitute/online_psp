@@ -40,7 +40,7 @@ else:
 
 #%% initialization
 lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
-Uhat0 = X[:, :q]/np.sqrt(X[:, :q]**2).sum(0)
+Uhat0 = X[:, :q]/np.sqrt((X[:, :q]**2).sum(0))
 
 ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
 if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None,learning_rate=None)
