@@ -18,19 +18,17 @@ from util import generate_samples, subspace_error, get_scale_data_factor
 n_epoch = 1
 d, q, n = 300, 50, 5000
 X, U, sigma2 = generate_samples(q, n, d)
-lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
+lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
 # Parameters IF_minimax_PCA_CLASS
 tau = 0.5
 # Simulation parameters
 compute_error = True
 standardize = True
-
-method_scaling = None
 method_scaling = 'norm'
-method_scaling = 'norm_log'
+
 
 if standardize:
-    scale_factor = get_scale_data_factor(q, X, method=method_scaling)
+    scale_factor = get_scale_data_factor(X)
     X, U, sigma2 = X * scale_factor, U, sigma2 * (scale_factor ** 2)
     # adjust eigenvalues magnitude according to how data is scaled
     # lambda_1 *= scale_factor ** 2
@@ -40,7 +38,7 @@ Uhat0 = X[:, :q] / (X[:, :q] ** 2).sum(0)
 errs  = []
 # Normalize initial guess
 
-eta = None#lambda t: 1e-3
+eta = None #lambda t: 1e-3
 ipca      = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
 if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None, tau=tau,learning_rate=eta)
 ccipca    = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1, cython=False, in_place=False)

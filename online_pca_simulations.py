@@ -73,19 +73,45 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         error_options['error_func_list'] = []
 
     generator_options = generator_options.copy()
+    # for problems with real data (small number of samples)
+    if n is not None:
+        ntot = n + n_test
+    else:
+        ntot = None
 
     if error_options['compute_population_error']:
         generator_options['return_U'] = True
-        X, U_pop, sigma2 = util.generate_samples(q, n + n_test, d, generator_options)
+
+        X, U_pop, sigma2 = util.generate_samples(q, ntot, d, method=generator_options['method'],
+                                                scale_data=generator_options['scale_data'],
+                                                scale_with_log_q=generator_options['scale_with_log_q'],
+                                                options=generator_options)
+
     else:
         generator_options['return_U'] = False
-        X = util.generate_samples(q, n + n_test, d, generator_options)
+        X = util.generate_samples(q, ntot, d, method=generator_options['method'],
+                                                scale_data=generator_options['scale_data'],
+                                                scale_with_log_q=generator_options['scale_with_log_q'],
+                                                options=generator_options)
+
+    # here making sure that we use the right n when including n_test frames
+    if d is None:
+        d, _ = X.shape
+        if ntot is None:
+            n = X.shape[-1] - n_test
+            print('** Warning: using only {0} samples for computing the PCA, You can set the n value to more than sample size '
+                'but you will be resampling the same frames multiple times'.format(str(n)))
+        else:
+            print('** Warning: You are resampling the same frames multiple times')
+
 
     X, Xtest = X[:,:n], X[:,n:]
     XXtest   = Xtest.T.dot(Xtest)
 
     normsXtest   = np.sum(np.abs(Xtest)**2,0)**0.5
     normsXXtest  = np.linalg.norm(XXtest, 'fro')
+
+
 
     if error_options['compute_population_error']:
         # Compute the subspace error of the approximation versus the population eigenvectors (use pop not sample)
@@ -215,6 +241,12 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         output_dict['runtime'] = t.interval
 
     os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+    if output_dict['simulation_options']['d'] is None:
+        output_dict['simulation_options']['d'] = 'None'
+    if output_dict['simulation_options']['n'] is None:
+        output_dict['simulation_options']['n'] = 'None'
+
     sio.savemat(filename, output_dict)
     print('Output written to %s' % filename)
 
@@ -224,16 +256,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         return t.interval
 
 
-def run_test(simulation_options, algorithm_options):
+def run_test(simulation_options=None, algorithm_options=None, generator_options=None):
     output_folder = os.getcwd() + '/test'
-
-    generator_options = {
-        'method': 'spiked_covariance',
-        'lambda_q': 5e-1,
-        'normalize': True,
-        'rho': 1e-2/5,
-        'scale_data': True
-    }
 
     errs = run_simulation(output_folder, simulation_options,
                           generator_options, algorithm_options)
@@ -258,31 +282,68 @@ def run_test(simulation_options, algorithm_options):
 
 
 if __name__ == "__main__":
+
+
+
     error_options = {
         'n_skip': 1,
         'orthogonalize_iterate': False,
         'compute_batch_error': True,
-        'compute_population_error' : True,
-        'compute_strain_error' : True,
-        'compute_reconstruction_error' : True
+        'compute_population_error': True,
+        'compute_strain_error': True,
+        'compute_reconstruction_error': True
     }
+    spiked_covariance = False
+    scale_data = True
+    scale_with_log_q = True
+    if spiked_covariance:
+        generator_options = {
+            'method': 'spiked_covariance',
+            'lambda_q': 5e-1,
+            'normalize': True,
+            'rho': 1e-2 / 5,
+            'scale_data': scale_data,
+            'scale_with_log_q': scale_with_log_q
+        }
 
-    simulation_options = {
-        'd': 200,
-        'q': 20,
-        'n': 1000,
-        'n0': 0,
-        'n_epoch': 1,
-        'n_test': 256,
-        'error_options': error_options,
-        'pca_init': False,
-        'init_ortho': True,
-        'standardize': True
-    }
+        simulation_options = {
+            'd': 200,
+            'q': 20,
+            'n': 5000,
+            'n0': 0,
+            'n_epoch': 1,
+            'n_test': 256,
+            'error_options': error_options,
+            'pca_init': False,
+            'init_ortho': True,
+        }
+    else:
+        dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat']
+        dset = dsets[1]
+        print('** ' + dset)
+        generator_options = {
+            'method': 'real_data',
+            'filename': './datasets/' + dset,
+            'lambda_q': 5e-1,
+            'scale_data': scale_data,
+            'scale_with_log_q': scale_with_log_q
+
+        }
+        simulation_options = {
+            'd': None,
+            'q': 20,
+            'n': None, # can set a number here, will select frames multiple times
+            'n0': 0,
+            'n_epoch': 1,
+            'n_test': 128,
+            'error_options': error_options,
+            'pca_init': False,
+            'init_ortho': True,
+        }
 
     algorithm_options = {
         'pca_algorithm': 'if_minimax_PCA',
         'tau': 0.5,
         'tol': 1e-7
     }
-    run_test(simulation_options, algorithm_options)
+    run_test(generator_options=generator_options, simulation_options=simulation_options, algorithm_options=algorithm_options)

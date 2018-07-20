@@ -11,7 +11,23 @@ import numpy as np
 import pylab as pl
 import time
 from util import subspace_error, load_dataset
-q = 100
+
+q = 50
+spiked_covariance_test = True
+if spiked_covariance_test:
+    d, n = 300, 5000
+    X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance')
+
+else:
+    dset = 'ATT_faces_112_92.mat'# 'ORL_32x32.mat', 'YaleB_32x32.mat'
+    options = {
+        'filename': './datasets/' + dset,
+        'return_U': True
+    }
+    X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', options=options)
+    d, n = X.shape
+
+
 for dset in ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat']:
     print('** ' + dset)
     # pl.figure()

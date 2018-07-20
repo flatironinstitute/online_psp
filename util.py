@@ -115,7 +115,7 @@ def load_dataset(dataset_name, return_U=True, q=None):
 
 
 
-def get_scale_data_factor(q, X, method = 'norm_log'):
+def get_scale_data_factor(X, method='norm'):
     ''' Scaling for convergence reasons
 
     Parameters
@@ -132,10 +132,7 @@ def get_scale_data_factor(q, X, method = 'norm_log'):
     # center
     # todo figure out why this works
     if method is not None:
-        if method == 'norm_log':
-            log_fact = np.log(q)
-            norm_fact = np.mean(np.sqrt(np.sum(X ** 2, 0)))
-        elif method == 'norm':
+        if method == 'norm':
             log_fact = 1
             norm_fact = np.mean(np.sqrt(np.sum(X ** 2, 0)))
         else:
@@ -148,12 +145,15 @@ def get_scale_data_factor(q, X, method = 'norm_log'):
 
     return scale_factor
 
-def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None):
+
+def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None, scale_data=False,
+                     scale_with_log_q = False):
     '''
     
     Parameters
     ----------
-    d: int 
+
+    d: int
         number of features
     
     q: int
@@ -167,6 +167,13 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
     
     options: dict
         specific of each method (see code)
+
+    scale_data: bool
+        scaling data so that average sample norm is one
+
+    scale_with_log_q: bool
+        whether to multiply the data by log(q)
+
 
     Returns
     -------
@@ -193,6 +200,7 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
                 'return_U': True,
             }
         return_U = options['return_U']
+
         if n is None or d is None:
             raise Exception('Spiked covariance requires parameters n and d')
 
@@ -233,6 +241,11 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
 
     # center data
     X -= X.mean(1)[:, None]
+    if scale_data:
+        scale_factor = get_scale_data_factor(X)
+        if scale_with_log_q:
+            scale_factor *= np.log(q)
+        X, U, lam = X * scale_factor, U, lam * (scale_factor ** 2)
 
     if return_U:
         return X, U, lam

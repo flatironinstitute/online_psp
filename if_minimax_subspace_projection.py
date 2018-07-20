@@ -143,29 +143,23 @@ if __name__ == "__main__":
     # Parameters
     n_epoch = 1
     tau = 0.5
-    q = 50
+    q = 100
     spiked_covariance_test = True
+    scale_data = True
+    scale_with_log_q = True
     if spiked_covariance_test:
-        d,  n = 1000, 1000
-        X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance')
+        d,  n = 1000, 5000
+        X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data, scale_with_log_q = scale_with_log_q)
 
     else:
-        X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data')
+        X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', scale_data=scale_data, scale_with_log_q = scale_with_log_q)
         d, n = X.shape
-
-    method_scaling = None
-    method_scaling = 'norm'
-    method_scaling = 'norm_log'
-
-    scale_factor = get_scale_data_factor(q, X, method=method_scaling)
-    X, U, sigma2 = X * scale_factor, U, sigma2 * (scale_factor ** 2)
     # adjust eigenvalues magnitude according to how data is scaled
     lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
-    lambda_1 *= scale_factor**2
     Uhat0 = X[:, :q] / (X[:, :q] ** 2).sum(0)
     # %%
     errs = []
-    if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=X[:, :q].T, Minv0=None, tau=tau)
+    if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None, tau=tau)
     time_1 = time.time()
     for n_e in range(n_epoch):
         for x in X.T:
