@@ -233,6 +233,8 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
         filename = options['filename']
 
         X, U, lam = load_dataset(filename, return_U=return_U)
+        U = U[:,:q]
+        lam = lam[:q]
         if n is not None:
             X = X[:, np.arange(n) % X.shape[-1]]
 

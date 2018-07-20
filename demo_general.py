@@ -18,7 +18,7 @@ n_epoch = 1
 compute_error = True
 scale_data = True
 scale_with_log_q = True
-spiked_covariance_test = True
+spiked_covariance_test = False
 
 if spiked_covariance_test:
     d, n = 1000, 5000

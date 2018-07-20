@@ -86,7 +86,6 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
                                                 scale_data=generator_options['scale_data'],
                                                 scale_with_log_q=generator_options['scale_with_log_q'],
                                                 options=generator_options)
-
     else:
         generator_options['return_U'] = False
         X = util.generate_samples(q, ntot, d, method=generator_options['method'],
@@ -331,7 +330,7 @@ if __name__ == "__main__":
         }
         simulation_options = {
             'd': None,
-            'q': 20,
+            'q': 100,
             'n': None, # can set a number here, will select frames multiple times
             'n0': 0,
             'n_epoch': 1,
