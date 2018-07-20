@@ -130,7 +130,7 @@ if __name__ == "__main__":
     # Parameters
     n_epoch = 1
     d, q, n = 20, 5, 1000
-    X, U, sigma2 = generate_samples(d, q, n)
+    X, U, sigma2 = generate_samples(q, n, d)
     lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
     Uhat0 = X[:, :q] / (X[:, :q] ** 2).sum(0)
     # %%

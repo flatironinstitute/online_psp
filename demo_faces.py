@@ -3,7 +3,6 @@
 # Author: Victor Minden (vminden@flatironinstitute.org)and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
 # Notes: Adapted from code by Andrea Giovannucci and Cengiz Pehlevan
 # Reference: (Cardot and Degras, 2015)
-
 ##############################
 from incremental_pca import IncrementalPCA_CLASS
 from ccipca import CCIPCA_CLASS
@@ -12,12 +11,17 @@ import numpy as np
 import pylab as pl
 import time
 from util import subspace_error, load_dataset
-q = 5
-for dset in ['ATT_faces_112_92.mat','ORL_32x32.mat','YaleB_32x32.mat']:
+q = 100
+for dset in ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat']:
     print('** ' + dset)
-    pl.figure()
+    # pl.figure()
     #%% GENERATE TEST DATA
-    X, U, sigma2 = load_dataset(dataset_name='./datasets/'+dset, return_U=True, q=None)
+    options = {
+        'filename': ='./datasets/'+dset,
+        'q': True,
+        'return_U': True
+    }
+    X, U, sigma2 = load_dataset(dataset_name='./datasets/'+dset, return_U=True, q=q, scale_data='norm_log')
 
     #%%
     n_epoch = 1
@@ -49,7 +53,6 @@ for dset in ['ATT_faces_112_92.mat','ORL_32x32.mat','YaleB_32x32.mat']:
         errs[name] = err
         times[name] = time_2
     #%% DISPLAY RESULTS
-    pl.close('all')
     keys = list(algorithms.keys())
     keys.sort()
     for name in keys:
@@ -60,5 +63,5 @@ for dset in ['ATT_faces_112_92.mat','ORL_32x32.mat','YaleB_32x32.mat']:
         print('Final subspace error ' + name + ':' + str(errs[name][-1]))
 
     pl.legend(keys)
-    # pl.show()
+    pl.show()
     pl.savefig(dset[:-3]+'png')

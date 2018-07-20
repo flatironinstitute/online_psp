@@ -76,10 +76,10 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
     if error_options['compute_population_error']:
         generator_options['return_U'] = True
-        X, U_pop, sigma2 = util.generate_samples(d, q, n + n_test, generator_options)
+        X, U_pop, sigma2 = util.generate_samples(q, n + n_test, d, generator_options)
     else:
         generator_options['return_U'] = False
-        X = util.generate_samples(d, q, n + n_test, generator_options)
+        X = util.generate_samples(q, n + n_test, d, generator_options)
 
     X, Xtest = X[:,:n], X[:,n:]
     XXtest   = Xtest.T.dot(Xtest)
@@ -231,7 +231,8 @@ def run_test(simulation_options, algorithm_options):
         'method': 'spiked_covariance',
         'lambda_q': 5e-1,
         'normalize': True,
-        'rho': 1e-2/5
+        'rho': 1e-2/5,
+        'scale_data': True
     }
 
     errs = run_simulation(output_folder, simulation_options,
@@ -275,7 +276,8 @@ if __name__ == "__main__":
         'n_test': 256,
         'error_options': error_options,
         'pca_init': False,
-        'init_ortho': True
+        'init_ortho': True,
+        'standardize': True
     }
 
     algorithm_options = {

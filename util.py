@@ -66,7 +66,7 @@ def strain_error(Y, XX, normXX):
 
 
 
-def load_dataset(dataset_name ,return_U = True, q = None):
+def load_dataset(dataset_name, return_U=True, q=None):
     '''
 
     Parameters
@@ -95,10 +95,7 @@ def load_dataset(dataset_name ,return_U = True, q = None):
     # gnd = ld['gnd']
     # center data
     X = fea.astype(np.float)
-    X -= X.mean(0)[None, :]
 
-    # X = normalize(X, axis=0)
-    X /= np.mean(np.sqrt(np.sum(X**2,0)))
 
     if return_U:
         if q is None:
@@ -107,14 +104,51 @@ def load_dataset(dataset_name ,return_U = True, q = None):
         pca.fit(X)
         U = pca.components_.T
         lam = pca.explained_variance_
-        return X.T, U, lam
+        X = X.T
+    else:
+        U = 0
+        lam = 0
+        X = X.T
+
+
+    return X, U, lam
+
+
+
+def get_scale_data_factor(q, X, method = 'norm_log'):
+    ''' Scaling for convergence reasons
+
+    Parameters
+    ----------
+    q
+    X
+    U
+    lambdas
+
+    Returns
+    -------
+
+    '''
+    # center
+    # todo figure out why this works
+    if method is not None:
+        if method == 'norm_log':
+            log_fact = np.log(q)
+            norm_fact = np.mean(np.sqrt(np.sum(X ** 2, 0)))
+        elif method == 'norm':
+            log_fact = 1
+            norm_fact = np.mean(np.sqrt(np.sum(X ** 2, 0)))
+        else:
+            raise Exception('Scale data modality not known')
+
+        scale_factor = log_fact / norm_fact
 
     else:
-        return X
+        scale_factor = 1
 
+    return scale_factor
 
-
-def generate_samples(d, q, n, options=None):
+def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None):
     '''
     
     Parameters
@@ -127,6 +161,9 @@ def generate_samples(d, q, n, options=None):
     
     n: int 
         number of samples
+
+    method: str
+        so far 'spiked_covariance' or 'real_data'
     
     options: dict
         specific of each method (see code)
@@ -144,22 +181,23 @@ def generate_samples(d, q, n, options=None):
 
 
     '''
-    # Generate synthetic data samples from a specified model
-    if options is None:
-        options = {
-            'method': 'spiked_covariance',
-            'lambda_q': 5e-1,
-            'normalize': True,
-            'rho': 1e-2 / 5,
-            'return_U': True
-        }
+    # Generate synthetic data samples  from a specified model or load real datasets
 
-    method = options['method']
 
     if method == 'spiked_covariance':
+        if options is None:
+            options = {
+                'lambda_q': 5e-1,
+                'normalize': True,
+                'rho': 1e-2 / 5,
+                'return_U': True,
+            }
+        return_U = options['return_U']
+        if n is None or d is None:
+            raise Exception('Spiked covariance requires parameters n and d')
+
         rho       = options['rho']
         normalize = options['normalize']
-
         if normalize:
             lambda_q = options['lambda_q']
             sigma    = np.sqrt(np.linspace(1, lambda_q, q))
@@ -174,13 +212,30 @@ def generate_samples(d, q, n, options=None):
         X   = np.sqrt(rho) * np.random.normal(0,1,(d,n))
 
         X  += U.dot( (w.T*sigma).T)
+        lam = (sigma ** 2)[:, np.newaxis]
 
-        if options['return_U']:
-            lam = (sigma**2)[:,np.newaxis]
-            return X, U, lam
-        else:
-            return X
+    elif method == 'real_data':
+        if options is None:
+            options = {
+                # 'filename': './datasets/ATT_faces_112_92.mat',
+                'filename': './datasets/ORL_32x32.mat',
+                'return_U': True
+            }
+        return_U = options['return_U']
+        filename = options['filename']
+
+        X, U, lam = load_dataset(filename, return_U=return_U)
+        if n is not None:
+            X = X[:, np.arange(n) % X.shape[-1]]
 
     else:
         assert 0, 'Specified method for data generation is not yet implemented!'
+
+    # center data
+    X -= X.mean(1)[:, None]
+
+    if return_U:
+        return X, U, lam
+    else:
+        return X
 

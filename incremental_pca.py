@@ -132,14 +132,32 @@ class IncrementalPCA_CLASS:
 if __name__ == "__main__":
     # %%
     print('Testing IPCA')
-    from util import generate_samples
+    from util import generate_samples, get_scale_data_factor
     import pylab as pl
     # Parameters
     n_epoch = 1
-    d, q, n = 20, 5, 1000
-    X, U, sigma2 = generate_samples(d, q, n)
-    lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
+    q = 20
+    spiked_covariance_test = True
+    if spiked_covariance_test:
+        d,  n = 300, 5000
+        X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance')
+
+    else:
+        X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data')
+        d, n = X.shape
+
+    method_scaling = None
+    # method_scaling = 'norm'
+    # method_scaling = 'norm_log'
+
+    scale_factor = get_scale_data_factor(q, X, method=method_scaling)
+    X, U, sigma2 = X * scale_factor, U, sigma2 * (scale_factor ** 2)
+    #adjust eigenvalues magnitude according to how data is scaled
+    lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
+    lambda_1 *= scale_factor**2
+
     Uhat0 = X[:, :q] / (X[:, :q] ** 2).sum(0)
+
     #%%
     errs = []
     ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
