@@ -127,8 +127,19 @@ if __name__ == "__main__":
     import pylab as pl
     # Parameters
     n_epoch = 1
-    d, q, n = 20, 5, 1000
-    X, U, sigma2 = generate_samples(d, q, n)
+    q = 50
+    spiked_covariance_test = True
+    if spiked_covariance_test:
+        d,  n = 1000, 1000
+        X, U, sigma2 = generate_samples(
+            q, n, d, method='spiked_covariance', scale_data=False, scale_with_log_q=True)
+
+    else:
+        X, U, sigma2 = generate_samples(
+            q, n=None, d=None, method='real_data', scale_data=True, scale_with_log_q=True)
+        d, n = X.shape
+
+    # adjust eigenvalues magnitude according to how data is scaled
     lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
     Uhat0 = X[:, :q] / np.sqrt((X[:, :q] ** 2).sum(0))
     # %%
