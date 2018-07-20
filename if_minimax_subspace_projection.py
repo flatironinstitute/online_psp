@@ -146,7 +146,7 @@ if __name__ == "__main__":
     q = 100
     spiked_covariance_test = True
     scale_data = True
-    scale_with_log_q = True
+    scale_with_log_q = False
     if spiked_covariance_test:
         d,  n = 1000, 5000
         X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data, scale_with_log_q = scale_with_log_q)

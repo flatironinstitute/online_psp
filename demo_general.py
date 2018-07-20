@@ -12,7 +12,7 @@ import pylab as pl
 import time
 from util import subspace_error, generate_samples, get_scale_data_factor
 
-q = 100
+q = 10
 n_epoch = 1
 # Simulation parameters
 compute_error = True
@@ -26,8 +26,8 @@ if spiked_covariance_test:
                                     scale_with_log_q=scale_with_log_q)
     dset = 'spiked_covariance'
 else:
-    dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat']
-    dset = dsets[1]
+    dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat', 'MNIST.mat']
+    dset = dsets[-1]
     print('** ' + dset)
     options = {
         'filename': './datasets/' + dset,

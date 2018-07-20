@@ -317,8 +317,8 @@ if __name__ == "__main__":
             'init_ortho': True,
         }
     else:
-        dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat']
-        dset = dsets[1]
+        dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat','MNIST.mat']
+        dset = dsets[-1]
         print('** ' + dset)
         generator_options = {
             'method': 'real_data',
