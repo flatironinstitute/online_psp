@@ -330,8 +330,8 @@ if __name__ == "__main__":
         }
         simulation_options = {
             'd': None,
-            'q': 100,
-            'n': 1000, # can set a number here, will select frames multiple times
+            'q': 50,
+            'n': 10000, # can set a number here, will select frames multiple times
             'n0': 0,
             'n_epoch': 1,
             'n_test': 128,
