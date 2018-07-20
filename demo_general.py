@@ -12,7 +12,7 @@ import pylab as pl
 import time
 from util import subspace_error, generate_samples, get_scale_data_factor
 
-q = 10
+q = 100
 n_epoch = 1
 # Simulation parameters
 compute_error = True
@@ -33,14 +33,14 @@ else:
         'filename': './datasets/' + dset,
         'return_U': True
     }
-    X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', options=options, scale_data=scale_data,
+    X, U, sigma2 = generate_samples(q, n=5000, d=None, method='real_data', options=options, scale_data=scale_data,
                                     scale_with_log_q=scale_with_log_q)
     d, n = X.shape
 
 
 #%% initialization
 lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
-Uhat0 = X[:, :q]/np.sqrt(X[:, :q]**2).sum(0)
+Uhat0 = X[:, :q]/np.sqrt((X[:, :q]**2).sum(0))
 
 ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
 if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None,learning_rate=None)
