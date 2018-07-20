@@ -95,7 +95,7 @@ def load_dataset(dataset_name, return_U=True, q=None):
     # gnd = ld['gnd']
     # center data
     X = fea.astype(np.float)
-
+    X -= X.mean(0)[None, :]
 
     if return_U:
         if q is None:
