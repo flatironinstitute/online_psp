@@ -153,15 +153,17 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
     if pca_algorithm == 'CCIPCA':
         # TODO: Maybe lambda0 should be sorted in descending order?
-        lambda0 = np.abs(np.random.normal(0, 1, (q,)) / np.sqrt(q))
+        lambda0 = 1e-8*np.ones(q)#np.sort(np.abs(np.random.normal(0, 1, (q,))))[::-1]
         pca_fitter = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0, in_place=True)
     elif pca_algorithm == 'incremental_PCA':
         tol = algorithm_options['tol']
-        lambda0 = np.abs(np.random.normal(0, 1, (q,)) / np.sqrt(q))
+        lambda0 = np.zeros(q)#0*np.sort(np.abs(np.random.normal(0, 1, (q,))))[::-1]
         pca_fitter = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0)
     elif pca_algorithm == 'if_minimax_PCA':
         tau = algorithm_options['tau']
-        pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None, tau=tau)
+        Minv0 = np.eye(q)
+        learning_rate = lambda t: 1.0 / (2 * t + 5)
+        pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
     # elif pca_algorithm == 'if_minimax_PCA':
     #     tau = algorithm_options['tau']
     #     if compute_error:
@@ -184,24 +186,18 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         n_its =  X[:,n0:].shape[1] * n_epoch
         errs = util.initialize_errors(error_options, n_its)
         i = 0
-        for n_e in range(n_epoch):
+        for _ in range(n_epoch):
             for x in X[:,n0:].T:
                 pca_fitter.fit_next(x)
                 Uhat = pca_fitter.get_components()
                 util.compute_errors(error_options, Uhat, i, errs)
                 i+=1
-                # TODO: implement skip
-                # if i == n_skip:
-                    # # Compute errors
-                    # i = 0
-                    # # TODO: implement this in each class
-                    # Uhat = pca_fitter.get_components()
-                    # util.compute_errors(error_options, Uhat, t, errs)
+
     else:
         # Do timing, do not compute errors
         # TODO: save the timing information, don't just print it out
         with Timer() as t:
-            for n_e in range(n_epoch):
+            for _ in range(n_epoch):
                 for x in X[:,n0:].T:
                     pca_fitter.fit_next(x)
         print('%s took %f sec.' % (pca_algorithm, t.interval))
@@ -292,7 +288,7 @@ if __name__ == "__main__":
         'compute_strain_error': True,
         'compute_reconstruction_error': True
     }
-    spiked_covariance = False
+    spiked_covariance = True
     scale_data = True
     scale_with_log_q = True
     if spiked_covariance:
