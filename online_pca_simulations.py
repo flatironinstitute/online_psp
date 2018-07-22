@@ -158,20 +158,15 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     elif pca_algorithm == 'incremental_PCA':
         tol = algorithm_options['tol']
         lambda0 = np.zeros(q)#0*np.sort(np.abs(np.random.normal(0, 1, (q,))))[::-1]
-        pca_fitter = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0)
+        pca_fitter = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0, tol=tol)
     elif pca_algorithm == 'if_minimax_PCA':
+        # What if we scale W0 down and Minv0 up
         tau = algorithm_options['tau']
-        Minv0 = np.eye(q)
+        scal = 100
+        Minv0 = np.eye(q) * scal
+        Uhat0 = Uhat0 / scal
         learning_rate = lambda t: 1.0 / (2 * t + 5)
         pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
-    # elif pca_algorithm == 'if_minimax_PCA':
-    #     tau = algorithm_options['tau']
-    #     if compute_error:
-    #         errs = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, error_options, W0=Uhat0.T)
-    #     else:
-    #         with Timer() as t:
-    #             *_, = if_minimax_PCA(X[:,n0:], q, tau, n_epoch, W0=Uhat0.T)
-    #         print('if_minimax_PCA took %f sec.' % t.interval)
 
     else:
         assert 0, 'You did not specify a valid algorithm.  Please choose one of:\n \tCCIPCA, incremental_PCA, if_minimax_PCA'
@@ -281,16 +276,18 @@ if __name__ == "__main__":
 
 
     error_options = {
-        'n_skip': 1,
+        'n_skip': 100,
         'orthogonalize_iterate': False,
         'compute_batch_error': True,
         'compute_population_error': True,
-        'compute_strain_error': True,
-        'compute_reconstruction_error': True
+        'compute_strain_error': False,
+        'compute_reconstruction_error': False
     }
-    spiked_covariance = True
+
+    spiked_covariance = False
     scale_data = True
-    scale_with_log_q = True
+    scale_with_log_q = False
+
     if spiked_covariance:
         generator_options = {
             'method': 'spiked_covariance',
@@ -303,7 +300,7 @@ if __name__ == "__main__":
 
         simulation_options = {
             'd': 200,
-            'q': 20,
+            'q': 50,
             'n': 5000,
             'n0': 0,
             'n_epoch': 1,
@@ -314,12 +311,12 @@ if __name__ == "__main__":
         }
     else:
         dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat','MNIST.mat']
-        dset = dsets[-1]
+        dset = dsets[2]
         print('** ' + dset)
         generator_options = {
             'method': 'real_data',
             'filename': './datasets/' + dset,
-            'lambda_q': 5e-1,
+           # 'lambda_q': 5e-1,
             'scale_data': scale_data,
             'scale_with_log_q': scale_with_log_q
 
@@ -327,7 +324,7 @@ if __name__ == "__main__":
         simulation_options = {
             'd': None,
             'q': 50,
-            'n': 10000, # can set a number here, will select frames multiple times
+            'n': 50000, # can set a number here, will select frames multiple times
             'n0': 0,
             'n_epoch': 1,
             'n_test': 128,
@@ -336,8 +333,10 @@ if __name__ == "__main__":
             'init_ortho': True,
         }
 
+    algos = ['if_minimax_PCA','incremental_PCA','CCIPCA']
+    algo = algos[0]
     algorithm_options = {
-        'pca_algorithm': 'if_minimax_PCA',
+        'pca_algorithm': algo,
         'tau': 0.5,
         'tol': 1e-7
     }
