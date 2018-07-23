@@ -190,7 +190,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
 
     # Output results to some specified folder with information filename (but long)
-    filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_n0_%d' %(pca_algorithm, d, q, n, n_epoch, n0)
+
+    filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_rho_%.2f' %(pca_algorithm, d, q, n, n_epoch, generator_options['rho'])
     if compute_error:
         filename += '_error'
     else:
@@ -226,10 +227,10 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         output_dict['simulation_options']['n'] = 'None'
 
     # sio.savemat(filename, output_dict)
-    filename  = filename[:-3] + 'npz'
-    np.savez(filename,**output_dict)
+    # filename  = filename[:-3] + 'npz'
+    # np.savez(filename,**output_dict)
 
-    print('Output written to %s' % filename)
+    # print('Output written to %s' % filename)
 
     if compute_error:
         return errs

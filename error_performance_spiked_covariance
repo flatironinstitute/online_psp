@@ -78,10 +78,11 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
 
 
 #%%
+n_repetitions = 1
 rhos = np.arange(.1, 1, .1)
 simulation_options['n'] = 100
 d_q_params = [(16,2), (64,4), (256,16), (1024, 16)]
-
+results = dict()
 counter = 0
 colors = ['b','r','g']
 for d, q in d_q_params:
@@ -91,15 +92,40 @@ for d, q in d_q_params:
         pop_err_avg = []
         batch_err_avg = []
         for rho in rhos:
-            print((d, q, rho))
-            generator_options['rho'] = rho
-            simulation_options['d'] = d
-            simulation_options['q'] = q
-            algorithm_options['pca_algorithm'] = algos[algo]
-            errs = run_test(generator_options=generator_options, simulation_options=simulation_options,
-                 algorithm_options=algorithm_options)
-            pop_err_avg.append(np.mean(errs['batch_err']))
-            batch_err_avg.append(np.mean(errs['population_err']))
+            errs_pop = []
+            errs_batch = []
+            for reps in range(n_repetitions):
+                print((d, q, rho))
+                generator_options['rho'] = rho
+                simulation_options['d'] = d
+                simulation_options['q'] = q
+                algorithm_options['pca_algorithm'] = algos[algo]
+                err = run_test(generator_options=generator_options, simulation_options=simulation_options,
+                                algorithm_options=algorithm_options)
+
+                errs_pop.append(err['population_err'])
+                errs_batch.append(err['batch_err'])
+
+            errs_pop = np.array(errs_pop)
+            errs_batch = np.array(errs_batch)
+            output_dict = {
+                'generator_options': generator_options,
+                'simulation_options': simulation_options,
+                'algorithm_options': algorithm_options,
+                'd': d,
+                'q': q,
+                'n': simulation_options['n'],
+                'n_epoch': 1,
+                'n0': 0,
+                'errs_batch': errs_batch,
+                'errs_pop': errs_pop,
+            }
+            np.savez('./test/'+'__'.join(['rho', str(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]])+'.npz', **output_dict)
+            results['__'.join([str(rho), str(d), str(q), algos[algo]])] = output_dict
+            lsls
+
+            pop_err_avg.append(np.mean(errs_pop[-1]))
+            batch_err_avg.append(np.mean(errs_batch['population_err'][-1]))
 
         line_pop, = ax.plot(rhos, pop_err_avg, '-d' + colors[algo])
         line_bat, = ax.plot(rhos, batch_err_avg, '-o' + colors[algo])
@@ -117,21 +143,39 @@ fls.sort()
 print(fls)
 for fl in fls:
     with np.load(fl) as ld:
-        print(ld.keys())
-        go = ld['generator_options']
-        results['rho'] = ld['generator_options'][()]['rho']
-        results['d'] = ld['simulation_options'][()]['d']
-        results['q'] = ld['simulation_options'][()]['q']
-        results['pca_algorithm'] = ld['algorithm_options'][()]['pca_algorithm']
-        results['errs'] = ld['errs']
+        rho = str(ld['generator_options'][()]['rho'])
+        d = str(ld['simulation_options'][()]['d'])
+        q = str(ld['simulation_options'][()]['q'])
+        pca_algorithm = ld['algorithm_options'][()]['pca_algorithm']
+        results['__'.join([rho, d, q, pca_algorithm])] = ld['errs'][()]
+
+        # print(ld.keys())
+        # go = ld['generator_options']
+        # results['rho'] = ld['generator_options'][()]['rho']
+        # results['d'] = ld['simulation_options'][()]['d']
+        # results['q'] = ld['simulation_options'][()]['q']
+        # results['pca_algorithm'] = ld['algorithm_options'][()]['pca_algorithm']
+        # results['errs'] = ld['errs'][()]
 
 #%%
+counter = 0
 for d, q in d_q_params:
     counter += 1
     ax = plt.subplot(1,4,counter)
     for algo in range(3):
+        pop_err_avg = []
+        batch_err_avg = []
+        for rho in rhos:
+            errs = results['__'.join([str(rho), str(d), str(q), algos[algo]])]
+            pop_err_avg.append(np.mean(errs['batch_err']))
+            batch_err_avg.append(np.mean(errs['population_err']))
 
-
+        line_pop, = ax.plot(rhos, pop_err_avg, '-d' + colors[algo])
+        line_bat, = ax.plot(rhos, batch_err_avg, '-o' + colors[algo])
+        line_pop.set_label(algos[algo] + '_pop')
+        line_bat.set_label(algos[algo] + '_batch')
+        ax.legend()
+        plt.pause(.1)
 
 
 
