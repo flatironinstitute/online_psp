@@ -47,7 +47,7 @@ if init_ortho:
     Uhat0, _ = np.linalg.qr(Uhat0)
 
 ccipca = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1,
-                      cython='auto', in_place=False)
+                      cython='auto')
 lambda_1 *= 0                    
 ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
 scal = 100
