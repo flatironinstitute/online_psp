@@ -143,7 +143,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     if pca_algorithm == 'CCIPCA':
         # TODO: Maybe lambda0 should be sorted in descending order?
         lambda0 = 1e-8*np.ones(q)#np.sort(np.abs(np.random.normal(0, 1, (q,))))[::-1]
-        pca_fitter = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0, in_place=True)
+        pca_fitter = CCIPCA_CLASS(q, d, cython='auto',Uhat0=Uhat0, lambda0=lambda0)
     elif pca_algorithm == 'incremental_PCA':
         tol = algorithm_options['tol']
         lambda0 = np.zeros(q)#0*np.sort(np.abs(np.random.normal(0, 1, (q,))))[::-1]
@@ -154,15 +154,11 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         scal = 100
         Minv0 = np.eye(q) * scal
         Uhat0 = Uhat0 / scal
-        learning_rate = lambda t: 1.0 / (2 * t + 5)
+        learning_rate = lambda t: 1.0 / (2.0*t + 5)
         pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
 
     else:
         assert 0, 'You did not specify a valid algorithm.  Please choose one of:\n \tCCIPCA, incremental_PCA, if_minimax_PCA'
-
-
-
-
 
 
     if compute_error:
@@ -235,7 +231,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     if compute_error:
         return errs
     else:
-        return t.interval
+        return None
 
 
 def run_test(simulation_options=None, algorithm_options=None, generator_options=None):
@@ -245,26 +241,25 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
                           generator_options, algorithm_options)
 
     handles = []
-
-    fig = plt.figure(1)
-    ax  = fig.add_subplot(1,1,1)
-    plt.title(algorithm_options['pca_algorithm'])
-    for err_name in errs:
-        print(err_name + ': %f' % (errs[err_name][-1]))
-        handle, = ax.plot(errs[err_name], label=err_name)
-        handles.append(handle)
-    plt.legend(handles=handles)
-    plt.ylabel('Error (log10 scale)')
-    plt.xlabel('Iteration')
-    #plt.ylim(ymax=1, ymin=0)
-    ax.set_yscale('log')
-    plt.show()
+    if errs:
+        fig = plt.figure(1)
+        ax  = fig.add_subplot(1,1,1)
+        plt.title(algorithm_options['pca_algorithm'])
+        for err_name in errs:
+            print(err_name + ': %f' % (errs[err_name][-1]))
+            handle, = ax.plot(errs[err_name], label=err_name)
+            handles.append(handle)
+        plt.legend(handles=handles)
+        plt.ylabel('Error (log10 scale)')
+        plt.xlabel('Iteration')
+        #plt.ylim(ymax=1, ymin=0)
+        ax.set_yscale('log')
+        plt.show()
 
 
 
 
 if __name__ == "__main__":
-
 
 
     error_options = {
@@ -275,8 +270,9 @@ if __name__ == "__main__":
         'compute_strain_error': False,
         'compute_reconstruction_error': False
     }
+    error_options = {}
 
-    spiked_covariance = False
+    spiked_covariance = True
     scale_data = True
 
     if spiked_covariance:
@@ -289,9 +285,9 @@ if __name__ == "__main__":
         }
 
         simulation_options = {
-            'd': 200,
+            'd': 8192,
             'q': 50,
-            'n': 5000,
+            'n': 1000,
             'n0': 0,
             'n_epoch': 1,
             'error_options': error_options,
