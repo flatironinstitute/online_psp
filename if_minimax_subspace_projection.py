@@ -146,13 +146,12 @@ if __name__ == "__main__":
     q = 100
     spiked_covariance_test = True
     scale_data = True
-    scale_with_log_q = False
     if spiked_covariance_test:
         d,  n = 1000, 5000
-        X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data, scale_with_log_q = scale_with_log_q)
+        X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data)
 
     else:
-        X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', scale_data=scale_data, scale_with_log_q = scale_with_log_q)
+        X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', scale_data=scale_data)
         d, n = X.shape
     # adjust eigenvalues magnitude according to how data is scaled
     lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)

@@ -147,20 +147,20 @@ def get_scale_data_factor(X, method='norm'):
 
 
 def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None, scale_data=False,
-                     scale_with_log_q = False):
+                     sample_with_replacement=False):
     '''
     
     Parameters
     ----------
 
-    d: int
+    d: int or None
         number of features
     
     q: int
         number of components
     
-    n: int 
-        number of samples
+    n: int or 'auto'
+        number of samples, if 'auto' it will return all the samples from real data datasets
 
     method: str
         so far 'spiked_covariance' or 'real_data'
@@ -171,8 +171,7 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
     scale_data: bool
         scaling data so that average sample norm is one
 
-    scale_with_log_q: bool
-        whether to multiply the data by log(q)
+
 
 
     Returns
@@ -189,9 +188,13 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
 
     '''
     # Generate synthetic data samples  from a specified model or load real datasets
+    # here making sure that we use the right n when including n_test frames
 
 
     if method == 'spiked_covariance':
+        if n =='auto':
+            raise ValueError('n cannot be "auto" for spiked_covariance model')
+
         if options is None:
             options = {
                 'lambda_q': 5e-1,
@@ -234,7 +237,14 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
 
         X, U, lam = load_dataset(filename, return_U=return_U, q=q)
 
-        if n is not None:
+        if n != 'auto':
+            if n > X.shape[-1]:
+                if sample_with_replacement:
+                    print('** Warning: You are sampling real data with replacement')
+                else:
+                    raise Exception("You are sampling real data with replacement "
+                                    "but sample_with_replacement flag is set to False")
+
             X = X[:, np.arange(n) % X.shape[-1]]
 
     else:
@@ -244,8 +254,6 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
     X -= X.mean(1)[:, None]
     if scale_data:
         scale_factor = get_scale_data_factor(X)
-        if scale_with_log_q:
-            scale_factor *= np.log(q)
         X, U, lam = X * scale_factor, U, lam * (scale_factor ** 2)
 
     if return_U:
