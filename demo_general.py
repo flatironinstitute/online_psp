@@ -10,22 +10,20 @@ from if_minimax_subspace_projection import IF_minimax_PCA_CLASS
 import numpy as np
 import pylab as pl
 import time
-from util import subspace_error, generate_samples, get_scale_data_factor
+from util import subspace_error, generate_samples
 
 q = 50
 n_epoch = 1
 # Simulation parameters
 compute_error = True
 scale_data = True
-scale_with_log_q = False
-spiked_covariance_test = False
+spiked_covariance_test = True
 init_ortho = True
 
 if spiked_covariance_test:
     print('** spiked_covariance')
     d, n = 200, 5000
-    X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance',scale_data=scale_data,
-                                    scale_with_log_q=scale_with_log_q)
+    X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance',scale_data=scale_data)
     dset = 'spiked_covariance'
 else:
     dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat', 'MNIST.mat']
@@ -35,8 +33,7 @@ else:
         'filename': './datasets/' + dset,
         'return_U': True
     }
-    X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', options=options, scale_data=scale_data,
-                                    scale_with_log_q=scale_with_log_q)
+    X, U, sigma2 = generate_samples(q, n=5000, d=None, method='real_data', options=options, scale_data=scale_data)
     d, n = X.shape
 
 

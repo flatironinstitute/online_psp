@@ -1,6 +1,6 @@
 # Title: online_pca_simulations.py
 # Description: A function for testing an online PCA algorithm
-# Author: Victor Minden (vminden@flatironinstitute.org)
+# Author: Victor Minden (vminden@flatironinstitute.org) and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
 # Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
 
@@ -53,7 +53,6 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     n       = simulation_options['n']
     n0      = simulation_options['n0']
     n_epoch = simulation_options['n_epoch']
-    n_test  = simulation_options['n_test']
     pca_init   = simulation_options['pca_init']
     init_ortho = simulation_options['init_ortho']
 
@@ -74,37 +73,27 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
     generator_options = generator_options.copy()
     # for problems with real data (small number of samples)
-    if n is not None:
-        ntot = n + n_test
-    else:
-        ntot = None
+
 
     if error_options['compute_population_error']:
         generator_options['return_U'] = True
 
-        X, U_pop, sigma2 = util.generate_samples(q, ntot, d, method=generator_options['method'],
+        X, U_pop, sigma2 = util.generate_samples(q, n, d, method=generator_options['method'],
                                                 scale_data=generator_options['scale_data'],
-                                                scale_with_log_q=generator_options['scale_with_log_q'],
-                                                options=generator_options)
+                                                options=generator_options, sample_with_replacement=True)
+
+
     else:
         generator_options['return_U'] = False
-        X = util.generate_samples(q, ntot, d, method=generator_options['method'],
+        X = util.generate_samples(q, n, d, method=generator_options['method'],
                                                 scale_data=generator_options['scale_data'],
-                                                scale_with_log_q=generator_options['scale_with_log_q'],
-                                                options=generator_options)
-
-    # here making sure that we use the right n when including n_test frames
-    if d is None:
-        d, _ = X.shape
-        if ntot is None:
-            n = X.shape[-1] - n_test
-            print('** Warning: using only {0} samples for computing the PCA, You can set the n value to more than sample size '
-                'but you will be resampling the same frames multiple times'.format(str(n)))
-        else:
-            print('** Warning: You are resampling the same frames multiple times')
+                                                options=generator_options, sample_with_replacement=True)
 
 
-    X, Xtest = X[:,:n], X[:,n:]
+    d, n = X.shape
+
+    print('RUNNING SIMULATION ON INPUT DATA:', X.shape)
+    Xtest = X
     XXtest   = Xtest.T.dot(Xtest)
 
     normsXtest   = np.sum(np.abs(Xtest)**2,0)**0.5
@@ -197,7 +186,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
 
     # Output results to some specified folder with information filename (but long)
-    filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_n0_%d_ntest_%d' %(pca_algorithm, d, q, n, n_epoch, n0, n_test)
+
+    filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_rho_%.2f' %(pca_algorithm, d, q, n, n_epoch, generator_options['rho'])
     if compute_error:
         filename += '_error'
     else:
@@ -216,7 +206,6 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     'n' : n,
     'n_epoch' : n_epoch,
     'n0' : n0,
-    'n_test' : n_test
     }
 
     if compute_error:
@@ -233,8 +222,11 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     if output_dict['simulation_options']['n'] is None:
         output_dict['simulation_options']['n'] = 'None'
 
-    sio.savemat(filename, output_dict)
-    print('Output written to %s' % filename)
+    # sio.savemat(filename, output_dict)
+    # filename  = filename[:-3] + 'npz'
+    # np.savez(filename,**output_dict)
+
+    # print('Output written to %s' % filename)
 
     if compute_error:
         return errs
@@ -271,7 +263,7 @@ if __name__ == "__main__":
 
 
     error_options = {
-        'n_skip': 100,
+        'n_skip': 5,
         'orthogonalize_iterate': False,
         'compute_batch_error': True,
         'compute_population_error': True,
@@ -282,7 +274,6 @@ if __name__ == "__main__":
 
     spiked_covariance = True
     scale_data = True
-    scale_with_log_q = False
 
     if spiked_covariance:
         generator_options = {
@@ -291,7 +282,6 @@ if __name__ == "__main__":
             'normalize': True,
             'rho': 1e-2 / 5,
             'scale_data': scale_data,
-            'scale_with_log_q': scale_with_log_q
         }
 
         simulation_options = {
@@ -300,37 +290,32 @@ if __name__ == "__main__":
             'n': 1000,
             'n0': 0,
             'n_epoch': 1,
-            'n_test': 0,#256,
             'error_options': error_options,
             'pca_init': False,
             'init_ortho': True,
         }
     else:
-        dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat','MNIST.mat']
-        dset = dsets[2]
+        dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat', 'MNIST.mat']
+        dset = dsets[1]
         print('** ' + dset)
         generator_options = {
             'method': 'real_data',
             'filename': './datasets/' + dset,
-           # 'lambda_q': 5e-1,
-            'scale_data': scale_data,
-            'scale_with_log_q': scale_with_log_q
-
+            'scale_data': scale_data
         }
         simulation_options = {
             'd': None,
             'q': 50,
-            'n': 50000, # can set a number here, will select frames multiple times
+            'n': 'auto', # can set a number here, will select frames multiple times
             'n0': 0,
             'n_epoch': 1,
-            'n_test': 128,
             'error_options': error_options,
             'pca_init': False,
             'init_ortho': True,
         }
 
-    algos = ['if_minimax_PCA','incremental_PCA','CCIPCA']
-    algo = algos[-1]
+    algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
+    algo = algos[0]
     algorithm_options = {
         'pca_algorithm': algo,
         'tau': 0.5,
