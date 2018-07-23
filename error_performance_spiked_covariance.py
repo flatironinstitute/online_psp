@@ -4,7 +4,6 @@
 # Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
 #%%
-lslsl
 #%%
 # imports
 from online_pca_simulations import run_simulation
