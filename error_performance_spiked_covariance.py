@@ -59,21 +59,6 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
     errs = run_simulation(output_folder, simulation_options,
                           generator_options, algorithm_options)
 
-    handles = []
-
-    # fig = plt.figure(1)
-    # ax = fig.add_subplot(1, 1, 1)
-    # plt.title(algorithm_options['pca_algorithm'])
-    # for err_name in errs:
-    #     print(err_name + ': %f' % (errs[err_name][-1]))
-    #     handle, = ax.plot(errs[err_name], label=err_name)
-    #     handles.append(handle)
-    # plt.legend(handles=handles)
-    # plt.ylabel('Error (log10 scale)')
-    # plt.xlabel('Iteration')
-    # # plt.ylim(ymax=1, ymin=0)
-    # ax.set_yscale('log')
-    # plt.show()
     return errs
 
 
