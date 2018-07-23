@@ -37,24 +37,23 @@ class CCIPCA_CLASS:
     fit_next()
     """
 
-    def __init__(self, q, d, Uhat0=None, lambda0=None, ell=2, cython=True, in_place=False,verbose =False):
+    def __init__(self, q, d, Uhat0=None, lambda0=None, ell=2, cython='auto'):
         #        if d>=2000 and cython:
         #            raise Exception('Cython Code is Limited to a 2000 dimensions array: use cython=False')
         if cython == 'auto':
-            if d>1000:
+            if d>=1000:
                 cython = False
             else:
                 cython = True
-        if verbose:
-            print('Using Cython:' + str(cython))
+    
 
         if Uhat0 is not None:
             assert Uhat0.shape == (d, q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d, q)
-            self.Uhat = Uhat0.copy()
+            self.Uhat = Uhat0.T.copy()
 
         else:
             # random initalization if not provided
-            self.Uhat = np.random.normal(loc=0, scale=1 / d, size=(d, q))
+            self.Uhat = np.random.normal(loc=0, scale=1 / d, size=(d, q)).T
 
         self.t = 1
 
@@ -69,37 +68,35 @@ class CCIPCA_CLASS:
         self.ell = ell
         self.cython = cython
         self.v = np.zeros(d)
-        self.in_place = in_place
+
+        if cython:
+            self.fit_next = self.fit_next_cython
+        else:
+            self.fit_next = self.fit_next_no_cython
 
     def fit(self, X):
-        self.Uhat, self.lambda_ = coord_update.coord_update_total(X, X.shape[-1], self.d, np.double(self.t),
+        self.Uhat, self.lambda_ = coord_update.coord_update(X, X.shape[-1], self.d, np.double(self.t),
                                                                   np.double(self.ell), self.lambda_, self.Uhat, self.q,
                                                                   self.v)
 
+    def fit_next_cython(self,x_):
+        x = x_.copy()
+        self.Uhat, self.lambda_ = coord_update.coord_update_trans(x, self.d, np.double(
+            self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q, self.v)
+        self.t += 1
 
-    def fit_next(self, x_):
-        if not self.in_place:
-            x = x_.copy()
-        else:
-            x = x_
-
-        assert x.shape == (self.d,)
-
-        if self.cython:
-            self.Uhat, self.lambda_ = coord_update.coord_update(x, self.d, np.double(self.t), np.double(self.ell),
-                                                                self.lambda_, self.Uhat, self.q, self.v)
-        else:
-            t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
-            old_wt = max(1,t-ell) / (t+1)
-            for i in range(q):
-              # TODO: is the max okay?
-                v = old_wt * lambda_[i] * Uhat[:, i] + (1-old_wt) * np.dot(x, Uhat[:,i]) * x
-                lambda_[i] = np.sqrt(v.dot(v))  # np.linalg.norm(v)
-                Uhat[:, i] = v / lambda_[i]
-                x = x - np.dot(x, Uhat[:, i]) * Uhat[:, i]
-
-            self.Uhat = Uhat
-            self.lambda_ = lambda_
+    def fit_next_no_cython(self, x_):    
+        x = x_.copy()                
+        t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
+        old_wt = max(1,t-ell) / (t+1)
+        for i in range(q):
+            # TODO: is the max okay?
+            v = old_wt * lambda_[i] * Uhat[i,:] + (1-old_wt) * np.dot(x, Uhat[i,:]) * x
+            lambda_[i] = np.sqrt(v.dot(v))  # np.linalg.norm(v)
+            Uhat[i,:] = v / lambda_[i]
+            x = x - np.dot(x, Uhat[i,:]) * Uhat[i,:]
+        self.Uhat = Uhat
+        self.lambda_ = lambda_
         self.t += 1
 
 
@@ -115,7 +112,7 @@ class CCIPCA_CLASS:
         components: ndarray
         '''
 
-        components = np.asarray(self.Uhat)
+        components = np.asarray(self.Uhat.T)
         if orthogonalize:
             components, _ = np.linalg.qr(components)
 

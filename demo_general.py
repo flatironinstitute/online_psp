@@ -18,7 +18,7 @@ n_epoch = 1
 compute_error = True
 scale_data = True
 scale_with_log_q = False
-spiked_covariance_test = True
+spiked_covariance_test = False
 init_ortho = True
 
 if spiked_covariance_test:
@@ -35,7 +35,7 @@ else:
         'filename': './datasets/' + dset,
         'return_U': True
     }
-    X, U, sigma2 = generate_samples(q, n=5000, d=None, method='real_data', options=options, scale_data=scale_data,
+    X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', options=options, scale_data=scale_data,
                                     scale_with_log_q=scale_with_log_q)
     d, n = X.shape
 
