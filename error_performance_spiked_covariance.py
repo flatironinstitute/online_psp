@@ -116,9 +116,9 @@ def run_test_wrapper(params):
 
 
 #%% parameters figure generation
-test_mode = 'illustrative_examples' # can be 'illustrative_examples' or 'vary_k'
+test_mode = 'vary_k' # can be 'illustrative_examples' or 'vary_k'
 rhos = np.logspace(-4,-0.5,10) # controls SNR
-rerun_simulation = True # whether to rerun from scratch or just show the results
+rerun_simulation = False # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation,True) # whether to use parallelization or to show results on the go
 #%% start cluster
 if parallelize:
@@ -148,8 +148,8 @@ if test_mode == 'illustrative_examples':
     data_fold = os.path.abspath('./spiked_cov_4_examples')
     d_q_params = [(16, 2), (64, 8), (256, 32), (1024, 64)]
     colors = ['b', 'r', 'g']
-    n_repetitions = 5  # 15
-    simulation_options['n'] = 100  # 2000
+    n_repetitions = 15
+    simulation_options['n'] = 3000
     plot = not parallelize
     if rerun_simulation:
         os.mkdir(data_fold)
@@ -181,10 +181,10 @@ if test_mode == 'illustrative_examples':
                         errs_pop = np.array(errs_pop)
                         errs_batch = np.array(errs_batch)
                     else:
-                        # fname = os.path.join(data_fold, '__'.join(
-                        #     ['rho', "{:.6f}".format(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
                         fname = os.path.join(data_fold, '__'.join(
-                            ['rho',str(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
+                            ['rho', "{:.6f}".format(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
+                        # fname = os.path.join(data_fold, '__'.join(
+                        #     ['rho',str(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
                         with np.load(fname) as ld:
                             pop_err_avg.append(np.mean(ld['batch_err'][()], 0)[-1])
                             batch_err_avg.append(np.mean(ld['population_err'][()], 0)[-1])
@@ -209,9 +209,9 @@ if test_mode == 'illustrative_examples':
 elif test_mode == 'vary_k':
     #%% vary k
     data_fold = os.path.abspath('./spiked_cov_vary_k')
-    n_repetitions = 2
-    simulation_options['n'] = 100
-    d_q_params = [(1024,2), (1024,8), (1024,32), (1024,64), (1024, 128)][:-1]
+    n_repetitions = 15
+    simulation_options['n'] = 3000
+    d_q_params = [(1024,2), (1024,8), (1024,32), (1024,64), (1024, 128)]
 
     if rerun_simulation:
         os.mkdir(data_fold)
@@ -249,15 +249,16 @@ elif test_mode == 'vary_k':
                             pop_err_avg.append(np.mean(ld['batch_err'][()], 0)[-1])
                             batch_err_avg.append(np.mean(ld['population_err'][()], 0)[-1])
 
-            ax = plt.subplot(3, 2, 2*algo + 1)
-            line_pop, = ax.loglog(rhos, pop_err_avg)
-            line_pop.set_label('q='+str(q))
-            ax.legend()
-            ax = plt.subplot(3, 2, 2*algo + 2)
-            line_bat, = ax.loglog(rhos, batch_err_avg)
-            line_bat.set_label('q='+str(q))
-            ax.legend()
-            plt.pause(.1)
+            if pop_err_avg is not None:
+                ax = plt.subplot(3, 2, 2*algo + 1)
+                line_pop, = ax.loglog(rhos, pop_err_avg)
+                line_pop.set_label('q='+str(q))
+                ax.legend()
+                ax = plt.subplot(3, 2, 2*algo + 2)
+                line_bat, = ax.loglog(rhos, batch_err_avg)
+                line_bat.set_label('q='+str(q))
+                ax.legend()
+                plt.pause(.1)
 
 
     if pop_err_avg is not None:
@@ -278,7 +279,8 @@ elif test_mode == 'vary_k':
         all_errs = dview.map(run_test_wrapper,all_pars)
 
 #%% stop cluster
-dview.terminate()
+if parallelize:
+    dview.terminate()
 
 
 
