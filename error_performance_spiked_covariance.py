@@ -117,10 +117,10 @@ def run_test_wrapper(params):
 
 
 # %% parameters figure generation
-test_mode = 'vary_k'  # can be 'illustrative_examples' or 'vary_k'
+test_mode = 'vary_q_fix_qdata'  # can be 'illustrative_examples' or 'vary_q', 'vary_q_fix_qdata'
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
-rerun_simulation = False  # whether to rerun from scratch or just show the results
-parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
+rerun_simulation = True  # whether to rerun from scratch or just show the results
+parallelize = np.logical_and(rerun_simulation, False)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
     n_processes = np.maximum(np.int(psutil.cpu_count()), 1)
@@ -209,9 +209,14 @@ if test_mode == 'illustrative_examples':
         all_res = dview.map(run_test_wrapper, all_pars)
 
 # %%
-elif test_mode == 'vary_k':
+elif test_mode == 'vary_q' or test_mode == 'vary_q_fix_qdata':
     # %% vary k
-    data_fold = os.path.abspath('./spiked_cov_vary_k')
+    if test_mode == 'vary_q':
+        data_fold = os.path.abspath('./spiked_cov_vary_q')
+    if test_mode == 'vary_q_fix_qdata':
+        data_fold = os.path.abspath('./spiked_cov_vary_q_fix_qdata')
+        generator_options['q_data'] = 128
+
     n_repetitions = 15
     simulation_options['n'] = 3000
     d_q_params = [(1024, 2), (1024, 8), (1024, 32), (1024, 64), (1024, 128)]

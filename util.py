@@ -198,8 +198,15 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
                 'lambda_q': 5e-1,
                 'normalize': True,
                 'rho': 1e-2 / 5,
-                'return_U': True,
+                'return_U': True
             }
+
+        if 'q_data' in options:
+            q_data = options['q_data']
+            print('generating data with fixed q_data')
+        else:
+            q_data = q
+
         return_U = options['return_U']
 
         if n is None or d is None:
@@ -209,19 +216,22 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
         normalize = options['normalize']
         if normalize:
             lambda_q = options['lambda_q']
-            sigma = np.sqrt(np.linspace(1, lambda_q, q))
+            sigma = np.sqrt(np.linspace(1, lambda_q, q_data))
         else:
             slope = options['slope']
             gap = options['gap']
-            sigma = np.sqrt(gap + slope * np.arange(q - 1, -1, -1))
+            sigma = np.sqrt(gap + slope * np.arange(q_data - 1, -1, -1))
 
-        U, _ = np.linalg.qr(np.random.normal(0, 1, (d, q)))
+        U, _ = np.linalg.qr(np.random.normal(0, 1, (d, q_data)))
 
-        w = np.random.normal(0, 1, (q, n))
+        w = np.random.normal(0, 1, (q_data, n))
         X = np.sqrt(rho) * np.random.normal(0, 1, (d, n))
 
         X += U.dot((w.T * sigma).T)
         lam = (sigma ** 2)[:, np.newaxis]
+
+        lam = lam[:q]
+        U = U[:,:q]
 
     elif method == 'real_data':
         if options is None:
