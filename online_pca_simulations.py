@@ -187,8 +187,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
 
     # Output results to some specified folder with information filename (but long)
-
-    filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_rho_%.2f' %(pca_algorithm, d, q, n, n_epoch, generator_options['rho'])
+    rho = generator_options.get('rho',0)
+    filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_rho_%.2f' %(pca_algorithm, d, q, n, n_epoch, rho)
     if compute_error:
         filename += '_error'
     else:
@@ -265,15 +265,16 @@ if __name__ == "__main__":
 
 
     error_options = {
-        'n_skip': 5,
+        'n_skip': 128,
+        # TODO remove ortho option, it is duplicated
         'orthogonalize_iterate': False,
         'compute_batch_error': True,
-        'compute_population_error': True,
+        'compute_population_error': False,
         'compute_strain_error': False,
         'compute_reconstruction_error': False
     }
 
-    spiked_covariance = True
+    spiked_covariance = False
     scale_data = True
 
     if spiked_covariance:
@@ -307,7 +308,7 @@ if __name__ == "__main__":
         simulation_options = {
             'd': None,
             'q': 50,
-            'n': 'auto', # can set a number here, will select frames multiple times
+            'n': 50000, # can set a number here, will select frames multiple times
             'n0': 0,
             'n_epoch': 1,
             'error_options': error_options,
@@ -316,7 +317,7 @@ if __name__ == "__main__":
         }
 
     algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
-    algo = algos[0]
+    algo = algos[2]
     algorithm_options = {
         'pca_algorithm': algo,
         'tau': 0.5,
