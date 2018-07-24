@@ -24,7 +24,7 @@ init_ortho = True
 if spiked_covariance_test:
     print('** spiked_covariance')
     d, n = 200, 5000
-    X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance',scale_data=scale_data)
+    X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data)
     dset = 'spiked_covariance'
 else:
     dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat', 'MNIST.mat']
@@ -34,16 +34,15 @@ else:
         'filename': './datasets/' + dset,
         'return_U': True
     }
-    X, U, sigma2 = generate_samples(q, n='auto', d=None, 
-    method='real_data', options=options, scale_data=scale_data,
-    sample_with_replacement=True)
+    X, U, sigma2 = generate_samples(q, n='auto', d=None,
+                                    method='real_data', options=options, scale_data=scale_data,
+                                    sample_with_replacement=True)
     d, n = X.shape
 
-
-#%% initialization
+# %% initialization
 # TODO: decide on what initialization we like
-lambda_1 = 1e-8*np.ones(shape=(q,))#abs(np.random.normal(0, 1, (q,)))# / np.sqrt(q)
-Uhat0 = X[:, :q]/np.sqrt((X[:, :q]**2).sum(0))
+lambda_1 = 1e-8 * np.ones(shape=(q,))  # abs(np.random.normal(0, 1, (q,)))# / np.sqrt(q)
+Uhat0 = X[:, :q] / np.sqrt((X[:, :q] ** 2).sum(0))
 
 if init_ortho:
     # Optionally orthogonalize the initial guess
@@ -51,16 +50,16 @@ if init_ortho:
 
 ccipca = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1,
                       cython='auto')
-lambda_1 *= 0                    
+lambda_1 *= 0
 ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
 scal = 100
 # lr = lambda t: 1/(0.1*t + 1e3)
 if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T / scal,
-                                     Minv0=scal*np.eye(q), 
-                                    learning_rate=None)
+                                 Minv0=scal * np.eye(q),
+                                 learning_rate=None)
 
-algorithms = {'ipca':ipca, 'if_mm_pca':if_mm_pca, 'ccipca':ccipca}
-#%% RUN ALGORITHMS
+algorithms = {'ipca': ipca, 'if_mm_pca': if_mm_pca, 'ccipca': ccipca}
+# %% RUN ALGORITHMS
 
 times = dict()
 errs = dict()
@@ -76,7 +75,7 @@ for name, algo in algorithms.items():
     time_2 = time.time() - time_1
     errs[name] = err
     times[name] = time_2
-#%% DISPLAY RESULTS
+# %% DISPLAY RESULTS
 keys = list(algorithms.keys())
 keys.sort()
 for name in keys:
@@ -88,4 +87,4 @@ for name in keys:
 
 pl.legend(keys)
 pl.show()
-pl.savefig(dset[:-3]+'png')
+pl.savefig(dset[:-3] + 'png')
