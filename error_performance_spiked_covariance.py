@@ -10,7 +10,6 @@ from online_pca_simulations import run_simulation
 import os
 import pylab as plt
 import numpy as np
-import caiman as cm
 from glob import glob
 import psutil
 import multiprocessing
