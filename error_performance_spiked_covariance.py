@@ -10,7 +10,6 @@ from online_pca_simulations import run_simulation
 import os
 import pylab as plt
 import numpy as np
-import caiman as cm
 from glob import glob
 
 # general parameters
@@ -120,6 +119,7 @@ rerun_simulation = True # whether to rerun from scratch or just show the results
 parallelize = False # whether to use parallelization or to show results on the go
 #%% start cluster
 if parallelize:
+    import caiman as cm
     c, dview, n_processes = cm.cluster.setup_cluster(
         backend='local', n_processes=None, single_thread=False)
 #%%
@@ -259,7 +259,8 @@ elif test_mode == 'vary_k':
 
 
 #%% stop cluster
-dview.terminate()
+if parallelize:
+    dview.terminate()
 
 
 
