@@ -13,7 +13,6 @@ from util import subspace_error
 import time
 
 
-
 ##############################
 ##############################
 
@@ -81,8 +80,6 @@ class IF_minimax_PCA_CLASS:
         self.outer_W = np.empty_like(W)
         self.outer_Minv = np.empty_like(Minv)
 
-
-
     def fit_next(self, x):
 
         assert x.shape == (self.d,)
@@ -113,7 +110,6 @@ class IF_minimax_PCA_CLASS:
 
         self.t += 1
 
-
     def get_components(self, orthogonalize=True):
         '''
         Extract components from object
@@ -133,9 +129,9 @@ class IF_minimax_PCA_CLASS:
         return components
 
 
-#%%
+# %%
 if __name__ == "__main__":
-#%%
+    # %%
     print('Testing IF_MINMAX_PROJECTION')
     from util import generate_samples, get_scale_data_factor
     import pylab as pl
@@ -147,7 +143,7 @@ if __name__ == "__main__":
     spiked_covariance_test = True
     scale_data = True
     if spiked_covariance_test:
-        d,  n = 1000, 5000
+        d, n = 1000, 5000
         X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data)
 
     else:

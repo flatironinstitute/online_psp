@@ -15,8 +15,8 @@ import util
 from util import subspace_error
 import time
 
-##############################
 
+##############################
 
 
 class LETIPCA_CLASS:
@@ -34,7 +34,7 @@ class LETIPCA_CLASS:
     fit_next()
     """
 
-    def __init__(self, q, d, Uhat0=None, lambda0=None, ell=2,in_place=False,verbose=False):
+    def __init__(self, q, d, Uhat0=None, lambda0=None, ell=2, in_place=False, verbose=False):
         if Uhat0 is not None:
             assert Uhat0.shape == (d, q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d, q)
             self.Uhat = Uhat0.copy()
@@ -58,7 +58,6 @@ class LETIPCA_CLASS:
         self.tol = 1e-12
         self.max_its = 30
 
-
     def fit_next(self, x_):
         if not self.in_place:
             x = x_.copy()
@@ -69,32 +68,32 @@ class LETIPCA_CLASS:
 
         t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
         tol, max_its = self.tol, self.max_its
-        old_wt = max(1,t-ell) / (t+1)
-        Uhat_new   = Uhat.copy()
+        old_wt = max(1, t - ell) / (t + 1)
+        Uhat_new = Uhat.copy()
         lambda_new = lambda_.copy()
         for i in range(q):
             v_old = np.zeros_like(Uhat_new[:, i]) + 100
             for _ in range(max_its):
                 Uhat_new[:, i] /= lambda_new[i]
-                if np.linalg.norm(v_old-Uhat_new[:, i]) < tol:
+                if np.linalg.norm(v_old - Uhat_new[:, i]) < tol:
                     break
-                old_term  = lambda_[i] * Uhat[:,i]
+                old_term = lambda_[i] * Uhat[:, i]
                 data_term = np.dot(x, Uhat_new[:, i]) * x
-                if i>0:
+                if i > 0:
                     term2 = lambda_new[:i] * \
-                        np.dot(Uhat_new[:, :i].T, Uhat_new[:, i])
-                    term2 = Uhat_new[:,:i].dot(term2)
+                            np.dot(Uhat_new[:, :i].T, Uhat_new[:, i])
+                    term2 = Uhat_new[:, :i].dot(term2)
 
                     term1 = lambda_[:i] * np.dot(Uhat[:, :i].T, Uhat_new[:, i])
-                    term1 = Uhat[:,:i].dot(term1)
+                    term1 = Uhat[:, :i].dot(term1)
                 else:
                     term1 = 0
                     term2 = 0
 
                 v_old = Uhat_new[:, i]
                 Uhat_new[:, i] = old_wt * term1 - term2 + \
-                    (1-old_wt) * data_term + old_wt * old_term
-                lambda_new[i] = np.linalg.norm(Uhat_new[:,i])
+                                 (1 - old_wt) * data_term + old_wt * old_term
+                lambda_new[i] = np.linalg.norm(Uhat_new[:, i])
 
         self.Uhat = Uhat_new.copy()
         self.lambda_ = lambda_new
@@ -119,18 +118,19 @@ class LETIPCA_CLASS:
         return components
 
 
-#%%
+# %%
 if __name__ == "__main__":
     # %%
     print('Testing LETIPCA')
     from util import generate_samples
     import pylab as pl
+
     # Parameters
     n_epoch = 1
     q = 50
     spiked_covariance_test = True
     if spiked_covariance_test:
-        d,  n = 1000, 1000
+        d, n = 1000, 1000
         X, U, sigma2 = generate_samples(
             q, n, d, method='spiked_covariance', scale_data=False)
 
@@ -161,4 +161,3 @@ if __name__ == "__main__":
           str(subspace_error(letipca.get_components(), U[:, :q])))
     pl.show()
     pl.pause(3)
-

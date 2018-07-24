@@ -8,16 +8,18 @@ import numpy as np
 from scipy.io import loadmat
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import normalize
+
+
 ##############################
 
-def compute_errors(error_options, Uhat, t, errs,M=None):
+def compute_errors(error_options, Uhat, t, errs, M=None):
     if t % error_options['n_skip']:
         return
     if error_options['orthogonalize_iterate']:
-        U,_ = np.linalg.qr(Uhat)
+        U, _ = np.linalg.qr(Uhat)
     else:
         U = Uhat
-    for i,(fname, f) in enumerate(error_options['error_func_list']):
+    for i, (fname, f) in enumerate(error_options['error_func_list']):
         if fname == 'batch_alignment_err':
             errs[fname][t] = f(Uhat)
         elif fname == 'diag_err':
@@ -28,10 +30,10 @@ def compute_errors(error_options, Uhat, t, errs,M=None):
 
 def initialize_errors(error_options, n_its):
     # Build a dictionary for storing the error information for each specified error function
-    return { fun_name : np.zeros(n_its) for (fun_name, _) in error_options['error_func_list'] }
+    return {fun_name: np.zeros(n_its) for (fun_name, _) in error_options['error_func_list']}
+
 
 def subspace_error(Uhat, U, relative_error_flag=True):
-
     """
     Parameters:
     ====================
@@ -43,27 +45,26 @@ def subspace_error(Uhat, U, relative_error_flag=True):
     err -- the (relative) Frobenius norm error
     """
 
-    q   = U.shape[1]
-    A   = Uhat.T.dot(U)
-    B   = Uhat.T.dot(Uhat)
-    err = np.sqrt(q + np.trace(B.dot(B)) - 2*np.trace(A.dot(A.T)))
+    q = U.shape[1]
+    A = Uhat.T.dot(U)
+    B = Uhat.T.dot(Uhat)
+    err = np.sqrt(q + np.trace(B.dot(B)) - 2 * np.trace(A.dot(A.T)))
     if relative_error_flag:
         err = err / np.sqrt(q)
     return err
-    #return np.linalg.norm(np.dot(Uhat, Uhat.T) - np.dot(U, U.T), ord='fro')
-
+    # return np.linalg.norm(np.dot(Uhat, Uhat.T) - np.dot(U, U.T), ord='fro')
 
 
 def reconstruction_error(Uhat, X, normsX):
     # Compute the mean relative l2 reconstruction error of the vectors in X
-	res = X - Uhat.dot(Uhat.T.dot(X))
-	res_norms = np.sum(np.abs(res)**2,0)**0.5
-	return np.mean(res_norms / normsX)
+    res = X - Uhat.dot(Uhat.T.dot(X))
+    res_norms = np.sum(np.abs(res) ** 2, 0) ** 0.5
+    return np.mean(res_norms / normsX)
+
 
 def strain_error(Y, XX, normXX):
     # Compute the strain cost function error relative to norm of X^TX
     return np.linalg.norm(Y.T.dot(Y) - XX, 'fro') / normXX
-
 
 
 def load_dataset(dataset_name, return_U=True, q=None):
@@ -110,9 +111,7 @@ def load_dataset(dataset_name, return_U=True, q=None):
         lam = 0
         X = X.T
 
-
     return X, U, lam
-
 
 
 def get_scale_data_factor(X, method='norm'):
@@ -190,9 +189,8 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
     # Generate synthetic data samples  from a specified model or load real datasets
     # here making sure that we use the right n when including n_test frames
 
-
     if method == 'spiked_covariance':
-        if n =='auto':
+        if n == 'auto':
             raise ValueError('n cannot be "auto" for spiked_covariance model')
 
         if options is None:
@@ -207,22 +205,22 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
         if n is None or d is None:
             raise Exception('Spiked covariance requires parameters n and d')
 
-        rho       = options['rho']
+        rho = options['rho']
         normalize = options['normalize']
         if normalize:
             lambda_q = options['lambda_q']
-            sigma    = np.sqrt(np.linspace(1, lambda_q, q))
+            sigma = np.sqrt(np.linspace(1, lambda_q, q))
         else:
-            slope    = options['slope']
-            gap      = options['gap']
-            sigma    = np.sqrt(gap + slope * np.arange(q-1,-1,-1))
+            slope = options['slope']
+            gap = options['gap']
+            sigma = np.sqrt(gap + slope * np.arange(q - 1, -1, -1))
 
-        U,_ = np.linalg.qr(np.random.normal(0,1,(d,q)))
+        U, _ = np.linalg.qr(np.random.normal(0, 1, (d, q)))
 
-        w   = np.random.normal(0,1,(q,n))
-        X   = np.sqrt(rho) * np.random.normal(0,1,(d,n))
+        w = np.random.normal(0, 1, (q, n))
+        X = np.sqrt(rho) * np.random.normal(0, 1, (d, n))
 
-        X  += U.dot( (w.T*sigma).T)
+        X += U.dot((w.T * sigma).T)
         lam = (sigma ** 2)[:, np.newaxis]
 
     elif method == 'real_data':
@@ -260,4 +258,3 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
         return X, U, lam
     else:
         return X
-

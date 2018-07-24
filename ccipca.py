@@ -15,8 +15,8 @@ from util import subspace_error
 import time
 import coord_update
 
-##############################
 
+##############################
 
 
 class CCIPCA_CLASS:
@@ -41,11 +41,10 @@ class CCIPCA_CLASS:
         #        if d>=2000 and cython:
         #            raise Exception('Cython Code is Limited to a 2000 dimensions array: use cython=False')
         if cython == 'auto':
-            if d>=1000:
+            if d >= 1000:
                 cython = False
             else:
                 cython = True
-    
 
         if Uhat0 is not None:
             assert Uhat0.shape == (d, q), "The shape of the initial guess Uhat0 must be (d,q)=(%d,%d)" % (d, q)
@@ -76,29 +75,28 @@ class CCIPCA_CLASS:
 
     def fit(self, X):
         self.Uhat, self.lambda_ = coord_update.coord_update(X, X.shape[-1], self.d, np.double(self.t),
-                                                                  np.double(self.ell), self.lambda_, self.Uhat, self.q,
-                                                                  self.v)
+                                                            np.double(self.ell), self.lambda_, self.Uhat, self.q,
+                                                            self.v)
 
-    def fit_next_cython(self,x_):
+    def fit_next_cython(self, x_):
         x = x_.copy()
         self.Uhat, self.lambda_ = coord_update.coord_update_trans(x, self.d, np.double(
             self.t), np.double(self.ell), self.lambda_, self.Uhat, self.q, self.v)
         self.t += 1
 
-    def fit_next_no_cython(self, x_):    
-        x = x_.copy()                
+    def fit_next_no_cython(self, x_):
+        x = x_.copy()
         t, ell, lambda_, Uhat, q = self.t, self.ell, self.lambda_, self.Uhat, self.q
-        old_wt = max(1,t-ell) / (t+1)
+        old_wt = max(1, t - ell) / (t + 1)
         for i in range(q):
             # TODO: is the max okay?
-            v = old_wt * lambda_[i] * Uhat[i,:] + (1-old_wt) * np.dot(x, Uhat[i,:]) * x
+            v = old_wt * lambda_[i] * Uhat[i, :] + (1 - old_wt) * np.dot(x, Uhat[i, :]) * x
             lambda_[i] = np.linalg.norm(v)
-            Uhat[i,:] = v / lambda_[i]
-            x = x - np.dot(x, Uhat[i,:]) * Uhat[i,:]
+            Uhat[i, :] = v / lambda_[i]
+            x = x - np.dot(x, Uhat[i, :]) * Uhat[i, :]
         self.Uhat = Uhat
         self.lambda_ = lambda_
         self.t += 1
-
 
     def get_components(self, orthogonalize=True):
         '''
@@ -118,18 +116,20 @@ class CCIPCA_CLASS:
 
         return components
 
-#%%
+
+# %%
 if __name__ == "__main__":
     # %%
     print('Testing CCIPCA')
     from util import generate_samples
     import pylab as pl
+
     # Parameters
     n_epoch = 1
     q = 50
     spiked_covariance_test = True
     if spiked_covariance_test:
-        d,  n = 1000, 1000
+        d, n = 1000, 1000
         X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=False)
 
     else:
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     for n_e in range(n_epoch):
         for x in X.T:
             ccipca.fit_next(x)
-            errs.append(subspace_error(ccipca.get_components(), U[:,:q]))
+            errs.append(subspace_error(ccipca.get_components(), U[:, :q]))
     time_2 = time.time() - time_1
     pl.semilogy(errs)
     pl.xlabel('relative subspace error')
@@ -155,4 +155,3 @@ if __name__ == "__main__":
     print('Final subspace error:' + str(subspace_error(ccipca.get_components(), U[:, :q])))
     pl.show()
     pl.pause(3)
-

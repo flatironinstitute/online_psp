@@ -4,12 +4,13 @@
 # Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
 
-#%%
+# %%
 # imports
 from online_pca_simulations import run_simulation
 import os
 import pylab as plt
 import numpy as np
+
 # general parameters
 
 
@@ -55,8 +56,9 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
     output_folder = os.getcwd() + '/test'
 
     timing = run_simulation(output_folder, simulation_options,
-                          generator_options, algorithm_options)
+                            generator_options, algorithm_options)
     return timing
+
 
 n_repetitions = 1
 simulation_options['n'] = 1000
@@ -80,7 +82,7 @@ for algo in range(3):
             simulation_options['q'] = q
             algorithm_options['pca_algorithm'] = algos[algo]
             timing = run_test(generator_options=generator_options, simulation_options=simulation_options,
-                            algorithm_options=algorithm_options)
+                              algorithm_options=algorithm_options)
             timings.append(timing)
         algo_timings.append(np.mean(timings))
         output_dict = {
@@ -95,23 +97,22 @@ for algo in range(3):
             'timing': np.mean(timings)
         }
         print(output_dict['timing'])
-        np.savez('./ex/timings/'+'d_%d_q_%d_algo_%s'
-                %(d, q, algos[algo]), 
-                output_dict)
-        
-    line_timing, = ax.plot(qs, np.array(algo_timings)/simulation_options['n'], '-d' + colors[algo])
-    #line_bat, = ax.plot(rhos, batch_err_avg, '-o' + colors[algo])
+        np.savez('./ex/timings/' + 'd_%d_q_%d_algo_%s'
+                 % (d, q, algos[algo]),
+                 output_dict)
+
+    line_timing, = ax.plot(qs, np.array(algo_timings) / simulation_options['n'], '-d' + colors[algo])
+    # line_bat, = ax.plot(rhos, batch_err_avg, '-o' + colors[algo])
     line_timing.set_label(algos[algo])
     # line_bat.set_label(algos[algo] + '_batch')
 qs = np.array(qs)
 ax.plot(qs, qs / 5e4, '--r')
-ax.plot(qs, qs**2 / 2e5, '--r')
+ax.plot(qs, qs ** 2 / 2e5, '--r')
 ax.legend()
 plt.xscale('log')
 plt.yscale('log')
 plt.savefig('./ex/timings/d_%d.png' % (d))
 plt.show()
-
 
 # #%%
 # from glob import glob

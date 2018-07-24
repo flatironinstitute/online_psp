@@ -15,6 +15,7 @@ import time
 from scipy.linalg import eigh
 import pylab as pl
 
+
 ##############################
 
 class IncrementalPCA_CLASS:
@@ -62,7 +63,6 @@ class IncrementalPCA_CLASS:
         self.d = d
         self.f = f
         self.tol = tol
-
 
     def fit_next(self, x):
         ''' Fit samples in online fashion
@@ -128,37 +128,38 @@ class IncrementalPCA_CLASS:
         return components
 
 
-#%%
+# %%
 if __name__ == "__main__":
     # %%
     print('Testing IPCA')
     from util import generate_samples
     import pylab as pl
+
     # Parameters
     n_epoch = 1
     q = 50
     spiked_covariance_test = False
     scale_data = False
     if spiked_covariance_test:
-        d,  n = 1000, 1000
+        d, n = 1000, 1000
         X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data)
 
     else:
         X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', scale_data=scale_data)
         d, n = X.shape
 
-    #adjust eigenvalues magnitude according to how data is scaled
+    # adjust eigenvalues magnitude according to how data is scaled
     lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
     Uhat0 = X[:, :q] / np.sqrt((X[:, :q] ** 2).sum(0))
 
-    #%%
+    # %%
     errs = []
     ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
     time_1 = time.time()
     for n_e in range(n_epoch):
         for sample in X.T:
             ipca.fit_next(sample)
-            errs.append(subspace_error(ipca.get_components(),U[:,:q]))
+            errs.append(subspace_error(ipca.get_components(), U[:, :q]))
     time_2 = time.time() - time_1
     pl.semilogy(errs)
     pl.xlabel('relative subspace error')
@@ -167,4 +168,3 @@ if __name__ == "__main__":
     print('Final subspace error:' + str(subspace_error(np.asarray(ipca.Uhat), U[:, :q])))
     pl.show()
     pl.pause(3)
-

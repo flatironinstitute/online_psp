@@ -3,8 +3,8 @@
 # Author: Victor Minden (vminden@flatironinstitute.org) and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
 # Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
-#%%
-#%%
+# %%
+# %%
 # imports
 from online_pca_simulations import run_simulation
 import os
@@ -53,7 +53,7 @@ algorithm_options = {
 }
 
 
-#%%
+# %%
 def run_test(simulation_options=None, algorithm_options=None, generator_options=None):
     '''function running each iteration of a test
     '''
@@ -63,7 +63,9 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
                           generator_options, algorithm_options)
 
     return errs
-#%%
+
+
+# %%
 def run_test_wrapper(params):
     ''' Function to parallelize on multiple repetitions os the same simulation
 
@@ -80,10 +82,9 @@ def run_test_wrapper(params):
     errs_batch = []
     for _ in range(n_repetitions):
         err = run_test(generator_options=generator_options, simulation_options=simulation_options,
-                   algorithm_options=algorithm_options)
+                       algorithm_options=algorithm_options)
         errs_pop.append(err['population_err'])
         errs_batch.append(err['batch_err'])
-
 
     errs_pop = np.array(errs_pop)
     errs_batch = np.array(errs_batch)
@@ -102,10 +103,11 @@ def run_test_wrapper(params):
         'batch_err': errs_pop,
     }
     rho = generator_options['rho']
-    d =  simulation_options['d']
-    q =  simulation_options['q']
+    d = simulation_options['d']
+    q = simulation_options['q']
     algo = algorithm_options['pca_algorithm']
-    save_name =  os.path.join(data_fold, '__'.join(['rho', "{:.6f}".format(rho), 'd', str(d), 'q', str(q), 'algo', algo]) + '.npz')
+    save_name = os.path.join(data_fold,
+                             '__'.join(['rho', "{:.6f}".format(rho), 'd', str(d), 'q', str(q), 'algo', algo]) + '.npz')
     print('Saving in:' + save_name)
     np.savez(
         save_name,
@@ -114,12 +116,12 @@ def run_test_wrapper(params):
     return errs_pop, errs_batch
 
 
-#%% parameters figure generation
-test_mode = 'vary_k' # can be 'illustrative_examples' or 'vary_k'
-rhos = np.logspace(-4,-0.5,10) # controls SNR
-rerun_simulation = False # whether to rerun from scratch or just show the results
-parallelize = np.logical_and(rerun_simulation,True) # whether to use parallelization or to show results on the go
-#%% start cluster
+# %% parameters figure generation
+test_mode = 'vary_k'  # can be 'illustrative_examples' or 'vary_k'
+rhos = np.logspace(-4, -0.5, 10)  # controls SNR
+rerun_simulation = False  # whether to rerun from scratch or just show the results
+parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
+# %% start cluster
 if parallelize:
     n_processes = np.maximum(np.int(psutil.cpu_count()), 1)
     if len(multiprocessing.active_children()) > 0:
@@ -141,9 +143,9 @@ if parallelize:
             pass
 
         dview = multiprocessing.Pool(n_processes)
-#%%
+# %%
 if test_mode == 'illustrative_examples':
-    #%%
+    # %%
     data_fold = os.path.abspath('./spiked_cov_4_examples')
     d_q_params = [(16, 2), (64, 8), (256, 32), (1024, 64)]
     colors = ['b', 'r', 'g']
@@ -159,7 +161,7 @@ if test_mode == 'illustrative_examples':
         simulation_options['q'] = q
         counter += 1
         if not parallelize:
-            ax = plt.subplot(1,4,counter)
+            ax = plt.subplot(1, 4, counter)
         for algo in range(3):
             algorithm_options['pca_algorithm'] = algos[algo]
             pop_err_avg = []
@@ -167,14 +169,16 @@ if test_mode == 'illustrative_examples':
             for rho in rhos:
                 print((d, q, rho))
                 generator_options['rho'] = rho
-                all_pars.append([generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold, n_repetitions])
+                all_pars.append(
+                    [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold,
+                     n_repetitions])
 
                 if parallelize:
                     pop_err_avg = None
                     batch_err_avg = None
                 else:
                     if rerun_simulation:
-                        errs_pop, errs_batch= run_test_wrapper(all_pars[-1])
+                        errs_pop, errs_batch = run_test_wrapper(all_pars[-1])
                         pop_err_avg.append(errs_pop.mean(0)[-1])
                         batch_err_avg.append(errs_batch.mean(0)[-1])
                         errs_pop = np.array(errs_pop)
@@ -202,15 +206,15 @@ if test_mode == 'illustrative_examples':
         plt.pause(3)
 
     if parallelize:
-        all_res = dview.map(run_test_wrapper,all_pars)
+        all_res = dview.map(run_test_wrapper, all_pars)
 
-#%%
+# %%
 elif test_mode == 'vary_k':
-    #%% vary k
+    # %% vary k
     data_fold = os.path.abspath('./spiked_cov_vary_k')
     n_repetitions = 15
     simulation_options['n'] = 3000
-    d_q_params = [(1024,2), (1024,8), (1024,32), (1024,64), (1024, 128)]
+    d_q_params = [(1024, 2), (1024, 8), (1024, 32), (1024, 64), (1024, 128)]
 
     if rerun_simulation:
         os.mkdir(data_fold)
@@ -228,13 +232,15 @@ elif test_mode == 'vary_k':
             for rho in rhos:
                 generator_options['rho'] = rho
                 print((d, q, rho))
-                all_pars.append([generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold, n_repetitions])
+                all_pars.append(
+                    [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold,
+                     n_repetitions])
                 if parallelize:
                     pop_err_avg = None
                     batch_err_avg = None
                 else:
                     if rerun_simulation:
-                        errs_pop, errs_batch= run_test_wrapper(all_pars[-1])
+                        errs_pop, errs_batch = run_test_wrapper(all_pars[-1])
                         pop_err_avg.append(errs_pop.mean(0)[-1])
                         batch_err_avg.append(errs_batch.mean(0)[-1])
                         errs_pop = np.array(errs_pop)
@@ -249,16 +255,15 @@ elif test_mode == 'vary_k':
                             batch_err_avg.append(np.mean(ld['population_err'][()], 0)[-1])
 
             if pop_err_avg is not None:
-                ax = plt.subplot(3, 2, 2*algo + 1)
+                ax = plt.subplot(3, 2, 2 * algo + 1)
                 line_pop, = ax.loglog(rhos, pop_err_avg)
-                line_pop.set_label('q='+str(q))
+                line_pop.set_label('q=' + str(q))
                 ax.legend()
-                ax = plt.subplot(3, 2, 2*algo + 2)
+                ax = plt.subplot(3, 2, 2 * algo + 2)
                 line_bat, = ax.loglog(rhos, batch_err_avg)
-                line_bat.set_label('q='+str(q))
+                line_bat.set_label('q=' + str(q))
                 ax.legend()
                 plt.pause(.1)
-
 
     if pop_err_avg is not None:
         for algo in range(3):
@@ -275,11 +280,8 @@ elif test_mode == 'vary_k':
             plt.pause(2)
 
     if parallelize:
-        all_errs = dview.map(run_test_wrapper,all_pars)
+        all_errs = dview.map(run_test_wrapper, all_pars)
 
-#%% stop cluster
+# %% stop cluster
 if parallelize:
     dview.terminate()
-
-
-
