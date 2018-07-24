@@ -93,11 +93,12 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     d, n = X.shape
 
     print('RUNNING SIMULATION ON INPUT DATA:', X.shape)
-    Xtest = X
-    XXtest   = Xtest.T.dot(Xtest)
+    if error_options['compute_strain_error'] or error_options['compute_reconstruction error']:    
+        Xtest = X
+        XXtest   = Xtest.T.dot(Xtest)
 
-    normsXtest   = np.sum(np.abs(Xtest)**2,0)**0.5
-    normsXXtest  = np.linalg.norm(XXtest, 'fro')
+        normsXtest   = np.sum(np.abs(Xtest)**2,0)**0.5
+        normsXXtest  = np.linalg.norm(XXtest, 'fro')
 
 
 
@@ -231,7 +232,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     if compute_error:
         return errs
     else:
-        return None
+        return t.interval
 
 
 def run_test(simulation_options=None, algorithm_options=None, generator_options=None):
@@ -241,6 +242,7 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
                           generator_options, algorithm_options)
 
     handles = []
+    # TODO: This will break if we don't compute errors
     if errs:
         fig = plt.figure(1)
         ax  = fig.add_subplot(1,1,1)
@@ -270,7 +272,6 @@ if __name__ == "__main__":
         'compute_strain_error': False,
         'compute_reconstruction_error': False
     }
-    error_options = {}
 
     spiked_covariance = True
     scale_data = True

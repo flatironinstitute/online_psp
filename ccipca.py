@@ -92,7 +92,7 @@ class CCIPCA_CLASS:
         for i in range(q):
             # TODO: is the max okay?
             v = old_wt * lambda_[i] * Uhat[i,:] + (1-old_wt) * np.dot(x, Uhat[i,:]) * x
-            lambda_[i] = np.sqrt(v.dot(v))  # np.linalg.norm(v)
+            lambda_[i] = np.linalg.norm(v)
             Uhat[i,:] = v / lambda_[i]
             x = x - np.dot(x, Uhat[i,:]) * Uhat[i,:]
         self.Uhat = Uhat
