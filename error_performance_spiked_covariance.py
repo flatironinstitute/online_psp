@@ -112,14 +112,16 @@ def run_test_wrapper(params):
 
     return errs_pop, errs_batch
 
-#%% start cluster
-c, dview, n_processes = cm.cluster.setup_cluster(
-    backend='local', n_processes=None, single_thread=False)
+
 #%% parameters figure generation
-test_mode = 'illustrative_examples' # can be 'illustrative_examples' or 'vary_k'
+test_mode = 'vary_k' # can be 'illustrative_examples' or 'vary_k'
 rhos = np.logspace(-4,-0.5,10) # controls SNR
-rerun_simulation = False # whether to rerun from scratch or just show the results
+rerun_simulation = True # whether to rerun from scratch or just show the results
 parallelize = False # whether to use parallelization or to show results on the go
+#%% start cluster
+if parallelize:
+    c, dview, n_processes = cm.cluster.setup_cluster(
+        backend='local', n_processes=None, single_thread=False)
 #%%
 if test_mode == 'illustrative_examples':
     #%%
@@ -137,8 +139,7 @@ if test_mode == 'illustrative_examples':
             simulation_options['d'] = d
             simulation_options['q'] = q
             counter += 1
-            if plot:
-                ax = plt.subplot(1,4,counter)
+
 
             for algo in range(3):
                 algorithm_options['pca_algorithm'] = algos[algo]
@@ -154,8 +155,13 @@ if test_mode == 'illustrative_examples':
                     if not parallelize:
                         errs_pop, errs_batch= run_test_wrapper(all_pars[-1])
 
-                    pop_err_avg.append(errs_pop.mean(0)[-1])
-                    batch_err_avg.append(errs_batch.mean(0)[-1])
+                        pop_err_avg.append(errs_pop.mean(0)[-1])
+                        batch_err_avg.append(errs_batch.mean(0)[-1])
+                        errs_pop = np.array(errs_pop)
+                        errs_batch = np.array(errs_batch)
+                    else:
+                        errs_pop = None
+                        errs_batch = None
 
                 if plot:
                     line_pop, = ax.loglog(rhos, pop_err_avg, '-d' + colors[algo])
@@ -198,10 +204,10 @@ if test_mode == 'illustrative_examples':
 elif test_mode == 'vary_k':
     #%% vary k
     data_fold = os.path.abspath('./spiked_cov_vary_k')
-    n_repetitions = 15
-    simulation_options['n'] = 200
-    d_q_params = [(1024,2), (1024,8), (1024,32), (1024,64), (1024, 128)]
-    colors = ['b','r','g']
+    n_repetitions = 2
+    simulation_options['n'] = 100
+    d_q_params = [(1024,2), (1024,8), (1024,32), (1024,64), (1024, 128)][:-1]
+
     plot = not parallelize
     if rerun_simulation:
         all_pars = []
@@ -213,24 +219,39 @@ elif test_mode == 'vary_k':
             simulation_options['q'] = q
             for algo in range(3):
                 algorithm_options['pca_algorithm'] = algos[algo]
+                pop_err_avg = []
+                batch_err_avg = []
                 for rho in rhos:
                     generator_options['rho'] = rho
                     print((d, q, rho))
                     all_pars.append([generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold, n_repetitions])
-                    if plot:
+                    if not parallelize:
                         errs_pop, errs_batch= run_test_wrapper(all_pars[-1])
                         pop_err_avg.append(errs_pop.mean(0)[-1])
                         batch_err_avg.append(errs_batch.mean(0)[-1])
+                        errs_pop = np.array(errs_pop)
+                        errs_batch = np.array(errs_batch)
+                    else:
+                        pop_err_avg = None
+                        batch_err_avg = None
 
                 if plot:
-                    line_pop, = ax.loglog(rhos, pop_err_avg, '-d' + colors[algo])
-                    line_bat, = ax.loglog(rhos, batch_err_avg, '-o' + colors[algo])
-                    line_pop.set_label(algos[algo] + '_pop')
-                    line_bat.set_label(algos[algo] + '_batch')
-                    plt.xlabel('rho')
-                    plt.xlabel('projection error')
+                    ax = plt.subplot(1, 2, 1)
+                    line_pop, = ax.loglog(rhos, pop_err_avg)
+                    ax = plt.subplot(1, 2, 2)
+                    line_bat, = ax.loglog(rhos, batch_err_avg)
+                    line_pop.set_label(algos[algo] + '_q_' + str(q))
+                    line_bat.set_label(algos[algo] + '_q' + str(q))
                     plt.pause(.1)
         if plot:
+
+            ax = plt.subplot(1, 2, 1)
+            plt.xlabel('rho')
+            plt.ylabel('population error')
+            ax.legend()
+            ax = plt.subplot(1, 2, 1)
+            plt.xlabel('rho')
+            plt.ylabel('batch error')
             ax.legend()
 
         if parallelize:
