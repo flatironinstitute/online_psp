@@ -109,6 +109,8 @@ ax.plot(qs, qs**2 / 2e5, '--r')
 ax.legend()
 plt.xscale('log')
 plt.yscale('log')
+plt.xlabel('Number of components')
+plt.ylabel('Time per iteration (s)')
 plt.savefig('./ex/timings/d_%d.png' % (d))
 plt.show()
 
