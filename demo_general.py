@@ -12,12 +12,13 @@ import pylab as pl
 import time
 from util import subspace_error, generate_samples
 
-q = 50
+q = 64
 n_epoch = 1
+err_its = 64
 # Simulation parameters
 compute_error = True
 scale_data = True
-spiked_covariance_test = True
+spiked_covariance_test = False
 init_ortho = True
 
 if spiked_covariance_test:
@@ -27,13 +28,15 @@ if spiked_covariance_test:
     dset = 'spiked_covariance'
 else:
     dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat', 'MNIST.mat']
-    dset = dsets[1]
+    dset = dsets[-1]
     print('** ' + dset)
     options = {
         'filename': './datasets/' + dset,
         'return_U': True
     }
-    X, U, sigma2 = generate_samples(q, n=5000, d=None, method='real_data', options=options, scale_data=scale_data)
+    X, U, sigma2 = generate_samples(q, n='auto', d=None, 
+    method='real_data', options=options, scale_data=scale_data,
+    sample_with_replacement=True)
     d, n = X.shape
 
 
@@ -51,8 +54,9 @@ ccipca = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1,
 lambda_1 *= 0                    
 ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
 scal = 100
-if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T / 100,
-                                     Minv0=100*np.eye(q), 
+# lr = lambda t: 1/(0.1*t + 1e3)
+if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T / scal,
+                                     Minv0=scal*np.eye(q), 
                                     learning_rate=None)
 
 algorithms = {'ipca':ipca, 'if_mm_pca':if_mm_pca, 'ccipca':ccipca}
@@ -65,9 +69,10 @@ for name, algo in algorithms.items():
     err = []
     time_1 = time.time()
     for n_e in range(n_epoch):
-        for x in X.T:
+        for its, x in enumerate(X.T):
             algo.fit_next(x)
-            err.append(subspace_error(algo.get_components(), U[:, :q]))
+            if its % err_its == 0:
+                err.append(subspace_error(algo.get_components(False), U[:, :q]))
     time_2 = time.time() - time_1
     errs[name] = err
     times[name] = time_2

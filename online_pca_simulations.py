@@ -175,9 +175,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         print('%s took %f sec.' % (pca_algorithm, t.interval))
 
     # Output results to some specified folder with information filename (but long)
-
-    filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_rho_%.2f' % (
-    pca_algorithm, d, q, n, n_epoch, generator_options['rho'])
+    rho = generator_options.get('rho',0)
+    filename = output_folder + '/%s_d_%d_q_%d_n_%d_nepoch_%d_rho_%.2f' %(pca_algorithm, d, q, n, n_epoch, rho)
     if compute_error:
         filename += '_error'
     else:
@@ -251,15 +250,16 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
 if __name__ == "__main__":
 
     error_options = {
-        'n_skip': 5,
+        'n_skip': 128,
+        # TODO remove ortho option, it is duplicated
         'orthogonalize_iterate': False,
         'compute_batch_error': True,
-        'compute_population_error': True,
+        'compute_population_error': False,
         'compute_strain_error': False,
         'compute_reconstruction_error': False
     }
 
-    spiked_covariance = True
+    spiked_covariance = False
     scale_data = True
 
     if spiked_covariance:
@@ -302,7 +302,7 @@ if __name__ == "__main__":
         }
 
     algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
-    algo = algos[0]
+    algo = algos[2]
     algorithm_options = {
         'pca_algorithm': algo,
         'tau': 0.5,
