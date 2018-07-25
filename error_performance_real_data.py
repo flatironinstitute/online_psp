@@ -29,23 +29,20 @@ error_options = {
 }
 
 generator_options = {
-    'method': 'spiked_covariance',
-    'lambda_q': 5e-1,
-    'normalize': True,
-    'rho': 1e-2 / 5,
+    'method': 'real_data',
     'scale_data': True,
-    'shuffle': False
+    'shuffle' : True
 }
 
 simulation_options = {
-    'd': 200,
-    'q': 50,
-    'n': 1000,
-    'n0': 0,
-    'n_epoch': 1,
-    'error_options': error_options,
-    'pca_init': False,
-    'init_ortho': True,
+        'd': None,
+        'q': 50,
+        'n': 'auto',  # can set a number here, will select frames multiple times
+        'n0': 0,
+        'error_options': error_options,
+        'pca_init': False,
+        'init_ortho': True,
+        'n_epoch' : 10
 }
 
 algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
@@ -100,18 +97,18 @@ def run_test_wrapper(params):
         'd': simulation_options['d'],
         'q': simulation_options['q'],
         'n': simulation_options['n'],
-        'rho': generator_options['rho'],
+        'filename': generator_options['filename'],
         'n_epoch': 1,
         'n0': 0,
         'population_err': errs_batch,
         'batch_err': errs_pop,
     }
-    rho = generator_options['rho']
     d = simulation_options['d']
     q = simulation_options['q']
+    filename = generator_options['filename']
     algo = algorithm_options['pca_algorithm']
     save_name = os.path.join(data_fold,
-                             '__'.join(['rho', "{:.6f}".format(rho), 'd', str(d), 'q', str(q), 'algo', algo]) + '.npz')
+                             '__'.join(['fname', filename.split('/')[-1], 'q', str(q), 'algo', algo]) + '.npz')
     print('Saving in:' + save_name)
     np.savez(
         save_name,
@@ -121,10 +118,10 @@ def run_test_wrapper(params):
 
 
 # %% parameters figure generation
-test_mode = 'vary_k'  # can be 'illustrative_examples' or 'vary_k'
+test_mode = 'illustrative_examples'  # can be 'illustrative_examples' or 'vary_q', 'vary_q_fix_qdata'
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
-rerun_simulation = False  # whether to rerun from scratch or just show the results
-parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
+rerun_simulation = True  # whether to rerun from scratch or just show the results
+parallelize = np.logical_and(rerun_simulation, False)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
     n_processes = np.maximum(np.int(psutil.cpu_count()), 1)
@@ -150,19 +147,21 @@ if parallelize:
 # %%
 if test_mode == 'illustrative_examples':
     # %%
-    data_fold = os.path.abspath('./spiked_cov_4_examples')
-    d_q_params = [(16, 2), (64, 8), (256, 32), (1024, 64)]
+    data_fold = os.path.abspath('./real_data_4_examples')
+    #redundant but there for flexibility
+    names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][:-3]
+    qs = [8, 16, 32, 64]
     colors = ['b', 'r', 'g']
-    n_repetitions = 15
-    simulation_options['n'] = 3000
+    n_repetitions = 1
+    simulation_options['n'] = 'auto'
     plot = not parallelize
     if rerun_simulation:
         os.mkdir(data_fold)
     counter = 0
     all_pars = []
-    for d, q in d_q_params:
-        simulation_options['d'] = d
-        simulation_options['q'] = q
+    for name in names:
+        generator_options['filename'] = './datasets/' + name
+
         counter += 1
         if not parallelize:
             ax = plt.subplot(4, 1, counter)
@@ -170,9 +169,9 @@ if test_mode == 'illustrative_examples':
             algorithm_options['pca_algorithm'] = algos[algo]
             pop_err_avg = []
             batch_err_avg = []
-            for rho in rhos:
-                print((d, q, rho))
-                generator_options['rho'] = rho
+            for q in qs:
+                print((name, q))
+                simulation_options['q'] = q
                 all_pars.append(
                     [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold,
                      n_repetitions])
@@ -189,7 +188,7 @@ if test_mode == 'illustrative_examples':
                         errs_batch = np.array(errs_batch)
                     else:
                         fname = os.path.join(data_fold, '__'.join(
-                            ['rho', "{:.6f}".format(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
+                            ['fname',name, 'q', str(q), 'algo', algos[algo]]) + '.npz')
                         # fname = os.path.join(data_fold, '__'.join(
                         #     ['rho',str(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
                         with np.load(fname) as ld:
@@ -197,9 +196,9 @@ if test_mode == 'illustrative_examples':
                             batch_err_avg.append(np.mean(ld['population_err'][()], 0)[-1])
 
             if pop_err_avg is not None:
-                plt.title('d=' + str(d) + ' k=' + str(q))
-                line_pop, = ax.loglog(rhos, pop_err_avg, '.-' + colors[algo])
-                line_bat, = ax.loglog(rhos, batch_err_avg, '-.' + colors[algo])
+                plt.title('k=' + str(q))
+                line_pop, = ax.loglog(qs, pop_err_avg, '.-' + colors[algo])
+                line_bat, = ax.loglog(qs, batch_err_avg, '-.' + colors[algo])
                 line_pop.set_label(algos[algo] + '_pop')
                 line_bat.set_label(algos[algo] + '_batch')
                 plt.ylabel('projection error')
@@ -207,7 +206,7 @@ if test_mode == 'illustrative_examples':
 
     if pop_err_avg is not None:
         ax.legend()
-        plt.xlabel('rho')
+        plt.xlabel('k')
         plt.pause(3)
 
     if parallelize:
@@ -220,7 +219,7 @@ elif test_mode == 'vary_q' or test_mode == 'vary_q_fix_qdata':
         data_fold = os.path.abspath('./spiked_cov_vary_k')
     if test_mode == 'vary_q_fix_qdata':
         data_fold = os.path.abspath('./spiked_cov_vary_k_fix_qdata')
-        lslsl
+        generator_options['q_data'] = 128
 
     n_repetitions = 15
     simulation_options['n'] = 3000

@@ -74,14 +74,14 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
         X, U_pop, sigma2 = util.generate_samples(q, n, d, method=generator_options['method'],
                                                  scale_data=generator_options['scale_data'],
-                                                 options=generator_options, sample_with_replacement=True)
+                                                 options=generator_options, sample_with_replacement=True, shuffle=generator_options['shuffle'])
 
 
     else:
         generator_options['return_U'] = False
         X = util.generate_samples(q, n, d, method=generator_options['method'],
                                   scale_data=generator_options['scale_data'],
-                                  options=generator_options, sample_with_replacement=True)
+                                  options=generator_options, sample_with_replacement=True, shuffle=generator_options['shuffle'])
 
     d, n = X.shape
 
