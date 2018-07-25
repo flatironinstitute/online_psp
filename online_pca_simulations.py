@@ -48,6 +48,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     # TODO: default values
     d = simulation_options['d']
     q = simulation_options['q']
+    q_true = simulation_options.get('q_true',q)
+
     n = simulation_options['n']
     n0 = simulation_options['n0']
     n_epoch = simulation_options['n_epoch']
@@ -104,7 +106,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         idx = np.flip(np.argsort(eig_val), 0)
         eig_val = eig_val[idx]
         V = V[:, idx]
-        U_batch = V[:, :q]
+        U_batch = V[:, :q_true]
         error_options['error_func_list'].append(('batch_err', lambda Uhat: util.subspace_error(Uhat, U_batch)))
 
     if error_options['compute_strain_error']:
@@ -116,6 +118,11 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         # TODO: allow in-sample testing?
         error_options['error_func_list'].append(
             ('recon_err', lambda Uhat: util.reconstruction_error(Uhat, Xtest, normsXtest)))
+
+    if error_options['compute_proj_error']:
+        error_options['error_func_list'].append(
+            ('proj_err', lambda Uhat: util.proj_error(Uhat, U_batch)))
+
 
     if pca_init:
         # Initialize using pca_init number of data points
@@ -260,13 +267,15 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
 if __name__ == "__main__":
 
     error_options = {
-        'n_skip': 128,
+        'n_skip': 10,
         # TODO remove ortho option, it is duplicated
         'orthogonalize_iterate': False,
         'compute_batch_error': True,
         'compute_population_error': False,
         'compute_strain_error': False,
-        'compute_reconstruction_error': False
+        'compute_reconstruction_error': False,
+        'compute_proj_error': True
+
     }
 
     spiked_covariance = True
@@ -282,9 +291,10 @@ if __name__ == "__main__":
         }
 
         simulation_options = {
-            'd': 8192,
+            'd': 100,
             'q': 50,
-            'n': 1000,
+            'q_true':10,
+            'n': 5000,
             'n0': 0,
             'n_epoch': 1,
             'error_options': error_options,
@@ -312,7 +322,7 @@ if __name__ == "__main__":
         }
 
     algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA', 'minimax_PCA']
-    algo = algos[3]
+    algo = algos[0]
     algorithm_options = {
         'pca_algorithm': algo,
         'tau': 0.5,

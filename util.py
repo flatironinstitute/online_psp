@@ -27,6 +27,16 @@ def compute_errors(error_options, Uhat, t, errs, M=None):
         else:
             errs[fname][t] = f(U)
 
+def proj_error(Uhat, U, relative_error_flag=True):
+    q_true = U.shape[1]
+    A = Uhat.T.dot(U)
+    err = np.linalg.norm(U - Uhat.dot(A))
+    if relative_error_flag:
+        err = err / np.sqrt(q_true)
+    return err
+    # return np.linalg.norm(np.dot(Uhat, Uhat.T) - np.dot(U, U.T), ord='fro')
+
+
 
 def initialize_errors(error_options, n_its):
     # Build a dictionary for storing the error information for each specified error function
