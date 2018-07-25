@@ -14,14 +14,6 @@ import numpy as np
 # general parameters
 
 
-error_options = {
-    'n_skip': 20,
-    'orthogonalize_iterate': False,
-    'compute_batch_error': True,
-    'compute_population_error': True,
-    'compute_strain_error': False,
-    'compute_reconstruction_error': False
-}
 error_options = {}
 
 generator_options = {
@@ -35,7 +27,7 @@ generator_options = {
 simulation_options = {
     'd': 8192,
     'q': 50,
-    'n': 1000,
+    'n': 2,
     'n0': 0,
     'n_epoch': 1,
     'error_options': error_options,
@@ -43,8 +35,9 @@ simulation_options = {
     'init_ortho': True,
 }
 
-algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
+algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA', 'minimax_PCA']
 algo = algos[0]
+#algos = ['if_minimax_PCA','minimax_PCA', 'CCIPCA']
 algorithm_options = {
     'pca_algorithm': algo,
     'tau': 0.5,
@@ -61,11 +54,11 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
 
 
 n_repetitions = 1
-simulation_options['n'] = 1000
-qs = [50, 100, 200, 500, 1000]
+simulation_options['n'] = 10
+qs = [64, 128, 256, 512, 1024, 2048, 4096]
 results = dict()
 counter = 0
-colors = ['b', 'r', 'g']
+colors = ['b', 'r', 'g','k']
 d = 8192
 counter += 1
 ax = plt.subplot(1, 1, counter)
@@ -73,7 +66,7 @@ simulation_options['d'] = d
 filename = './ex/timings/blah.blah'
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-for algo in range(3):
+for algo in range(len(algos)):
     algo_timings = []
     for q in qs:
         timings = []
@@ -115,45 +108,3 @@ plt.xlabel('Number of components')
 plt.ylabel('Time per iteration (s)')
 plt.savefig('./ex/timings/d_%d.png' % (d))
 plt.show()
-
-# #%%
-# from glob import glob
-# results = dict()
-# fls = glob('test/*.npz')
-# fls.sort()
-# print(fls)
-# for fl in fls:
-#     with np.load(fl) as ld:
-#         rho = str(ld['generator_options'][()]['rho'])
-#         d = str(ld['simulation_options'][()]['d'])
-#         q = str(ld['simulation_options'][()]['q'])
-#         pca_algorithm = ld['algorithm_options'][()]['pca_algorithm']
-#         results['__'.join([rho, d, q, pca_algorithm])] = ld['errs'][()]
-
-#         # print(ld.keys())
-#         # go = ld['generator_options']
-#         # results['rho'] = ld['generator_options'][()]['rho']
-#         # results['d'] = ld['simulation_options'][()]['d']
-#         # results['q'] = ld['simulation_options'][()]['q']
-#         # results['pca_algorithm'] = ld['algorithm_options'][()]['pca_algorithm']
-#         # results['errs'] = ld['errs'][()]
-
-# #%%
-# counter = 0
-# for d, q in d_q_params:
-#     counter += 1
-#     ax = plt.subplot(1, 4, counter)
-#     for algo in range(3):
-#         pop_err_avg = []
-#         batch_err_avg = []
-#         for rho in rhos:
-#             errs = results['__'.join([str(rho), str(d), str(q), algos[algo]])]
-#             pop_err_avg.append(np.mean(errs['batch_err']))
-#             batch_err_avg.append(np.mean(errs['population_err']))
-
-#         line_pop, = ax.plot(rhos, pop_err_avg, '-d' + colors[algo])
-#         line_bat, = ax.plot(rhos, batch_err_avg, '-o' + colors[algo])
-#         line_pop.set_label(algos[algo] + '_pop')
-#         line_bat.set_label(algos[algo] + '_batch')
-#         ax.legend()
-#         plt.pause(.1)

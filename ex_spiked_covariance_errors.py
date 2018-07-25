@@ -1,4 +1,4 @@
-# Title: error_performance_spiked_covariance.py
+# Title: ex_spiked_covariance_errors.py
 # Description: Testing online PCA algorithm population and batch error on artificially generated data
 # Author: Victor Minden (vminden@flatironinstitute.org) and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
 # Notes: Adapted from code by Andrea Giovannucci
@@ -13,6 +13,10 @@ import numpy as np
 from glob import glob
 import psutil
 import multiprocessing
+
+
+# TODO: change the places where number of algorithms is 
+# implicitly hard-coded to be 3
 
 # general parameters
 
@@ -44,7 +48,7 @@ simulation_options = {
     'init_ortho': True,
 }
 
-algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
+algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA', 'minimax_PCA']
 algo = algos[0]
 algorithm_options = {
     'pca_algorithm': algo,

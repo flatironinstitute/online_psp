@@ -16,6 +16,7 @@ import time
 from if_minimax_subspace_projection import IF_minimax_PCA_CLASS
 from ccipca import CCIPCA_CLASS
 from incremental_pca import IncrementalPCA_CLASS
+from minimax_subspace_projection import Minimax_PCA_CLASS
 
 from collections import defaultdict
 from matplotlib import pyplot as plt
@@ -149,6 +150,15 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         Uhat0 = Uhat0 / scal
         learning_rate = lambda t: 1.0 / (2.0 * t + 5)
         pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
+    elif pca_algorithm == 'minimax_PCA':
+        tau = algorithm_options['tau']
+        scal = 100
+        M0 = np.eye(q) / scal
+        Uhat0 = Uhat0 / scal
+
+        def learning_rate(t): return 1.0 / (2.0 * t + 5)
+        pca_fitter = Minimax_PCA_CLASS(
+            q, d, W0=Uhat0.T, M0=M0, tau=tau, learning_rate=learning_rate)
 
     else:
         assert 0, 'You did not specify a valid algorithm.  Please choose one of:\n \tCCIPCA, incremental_PCA, if_minimax_PCA'
@@ -259,7 +269,7 @@ if __name__ == "__main__":
         'compute_reconstruction_error': False
     }
 
-    spiked_covariance = False
+    spiked_covariance = True
     scale_data = True
 
     if spiked_covariance:
@@ -301,8 +311,8 @@ if __name__ == "__main__":
             'init_ortho': True,
         }
 
-    algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
-    algo = algos[2]
+    algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA', 'minimax_PCA']
+    algo = algos[3]
     algorithm_options = {
         'pca_algorithm': algo,
         'tau': 0.5,
