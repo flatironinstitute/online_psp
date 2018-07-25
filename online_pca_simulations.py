@@ -16,6 +16,7 @@ import time
 from if_minimax_subspace_projection import IF_minimax_PCA_CLASS
 from ccipca import CCIPCA_CLASS
 from incremental_pca import IncrementalPCA_CLASS
+from minimax_subspace_projection import Minimax_PCA_CLASS
 
 from collections import defaultdict
 from matplotlib import pyplot as plt
@@ -47,6 +48,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     # TODO: default values
     d = simulation_options['d']
     q = simulation_options['q']
+    q_true = simulation_options.get('q_true',q)
+
     n = simulation_options['n']
     n0 = simulation_options['n0']
     n_epoch = simulation_options['n_epoch']
@@ -103,7 +106,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         idx = np.flip(np.argsort(eig_val), 0)
         eig_val = eig_val[idx]
         V = V[:, idx]
-        U_batch = V[:, :q]
+        U_batch = V[:, :q_true]
         error_options['error_func_list'].append(('batch_err', lambda Uhat: util.subspace_error(Uhat, U_batch)))
 
     if error_options['compute_strain_error']:
@@ -115,6 +118,11 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         # TODO: allow in-sample testing?
         error_options['error_func_list'].append(
             ('recon_err', lambda Uhat: util.reconstruction_error(Uhat, Xtest, normsXtest)))
+
+    if error_options['compute_proj_error']:
+        error_options['error_func_list'].append(
+            ('proj_err', lambda Uhat: util.proj_error(Uhat, U_batch)))
+
 
     if pca_init:
         # Initialize using pca_init number of data points
@@ -149,6 +157,15 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         Uhat0 = Uhat0 / scal
         learning_rate = lambda t: 1.0 / (2.0 * t + 5)
         pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
+    elif pca_algorithm == 'minimax_PCA':
+        tau = algorithm_options['tau']
+        scal = 100
+        M0 = np.eye(q) / scal
+        Uhat0 = Uhat0 / scal
+
+        def learning_rate(t): return 1.0 / (2.0 * t + 5)
+        pca_fitter = Minimax_PCA_CLASS(
+            q, d, W0=Uhat0.T, M0=M0, tau=tau, learning_rate=learning_rate)
 
     else:
         assert 0, 'You did not specify a valid algorithm.  Please choose one of:\n \tCCIPCA, incremental_PCA, if_minimax_PCA'
@@ -250,16 +267,18 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
 if __name__ == "__main__":
 
     error_options = {
-        'n_skip': 128,
+        'n_skip': 10,
         # TODO remove ortho option, it is duplicated
         'orthogonalize_iterate': False,
         'compute_batch_error': True,
         'compute_population_error': False,
         'compute_strain_error': False,
-        'compute_reconstruction_error': False
+        'compute_reconstruction_error': False,
+        'compute_proj_error': True
+
     }
 
-    spiked_covariance = False
+    spiked_covariance = True
     scale_data = True
 
     if spiked_covariance:
@@ -272,9 +291,10 @@ if __name__ == "__main__":
         }
 
         simulation_options = {
-            'd': 8192,
+            'd': 100,
             'q': 50,
-            'n': 1000,
+            'q_true':10,
+            'n': 5000,
             'n0': 0,
             'n_epoch': 1,
             'error_options': error_options,
@@ -301,8 +321,8 @@ if __name__ == "__main__":
             'init_ortho': True,
         }
 
-    algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
-    algo = algos[2]
+    algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA', 'minimax_PCA']
+    algo = algos[0]
     algorithm_options = {
         'pca_algorithm': algo,
         'tau': 0.5,
