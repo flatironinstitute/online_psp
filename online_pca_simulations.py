@@ -48,7 +48,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     # TODO: default values
     d = simulation_options['d']
     q = simulation_options['q']
-    q_true = simulation_options.get('q_true',q)
+    
 
     n = simulation_options['n']
     n0 = simulation_options['n0']
@@ -61,6 +61,12 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     # We wrap things in a default dict so we don't have to check if keys exist
     error_options = defaultdict(int, simulation_options['error_options'])
     compute_error = any(error_options)
+    q_true = q
+
+    if error_options['compute_proj_error']:
+        q_true = simulation_options.get('q_true', q)
+        assert not (error_options['compute_batch_error'] or error_options['compute_population_error']), 'Cannot compute proj_error at the same time as other errors!'
+
 
     if not error_options['n_skip']:
         error_options['n_skip'] = 1
@@ -75,14 +81,14 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     if error_options['compute_population_error']:
         generator_options['return_U'] = True
 
-        X, U_pop, sigma2 = util.generate_samples(q, n, d, method=generator_options['method'],
+        X, U_pop, sigma2 = util.generate_samples(q_true, n, d, method=generator_options['method'],
                                                  scale_data=generator_options['scale_data'],
                                                  options=generator_options, sample_with_replacement=True, shuffle=generator_options['shuffle'])
 
 
     else:
         generator_options['return_U'] = False
-        X = util.generate_samples(q, n, d, method=generator_options['method'],
+        X = util.generate_samples(q_true, n, d, method=generator_options['method'],
                                   scale_data=generator_options['scale_data'],
                                   options=generator_options, sample_with_replacement=True, shuffle=generator_options['shuffle'])
 
@@ -100,22 +106,23 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         # Compute the subspace error of the approximation versus the population eigenvectors (use pop not sample)
         error_options['error_func_list'].append(('population_err', lambda Uhat: util.subspace_error(Uhat, U_pop)))
 
-    if error_options['compute_batch_error']:
+    if error_options['compute_batch_error'] or error_options['compute_proj_error']:
         # Compute the subspace error of the approximation versus the offline estimate of the eigenvectors (use sample not pop)
         eig_val, V = np.linalg.eigh(X.dot(X.T) / n)
         idx = np.flip(np.argsort(eig_val), 0)
         eig_val = eig_val[idx]
         V = V[:, idx]
         U_batch = V[:, :q_true]
+    if error_options['compute_batch_error']:
         error_options['error_func_list'].append(('batch_err', lambda Uhat: util.subspace_error(Uhat, U_batch)))
 
     if error_options['compute_strain_error']:
-        # TODO: what is this
+        # TODO: what is this does it even work anymore
         error_options['error_func_list'].append(
             ('strain_err', lambda Uhat: util.strain_error(Uhat.T.dot(Xtest), XXtest, normsXXtest)))
 
     if error_options['compute_reconstruction_error']:
-        # TODO: allow in-sample testing?
+        # TODO: allow in-sample testing? does this even work anymore
         error_options['error_func_list'].append(
             ('recon_err', lambda Uhat: util.reconstruction_error(Uhat, Xtest, normsXtest)))
 
@@ -270,7 +277,7 @@ if __name__ == "__main__":
         'n_skip': 10,
         # TODO remove ortho option, it is duplicated
         'orthogonalize_iterate': False,
-        'compute_batch_error': True,
+        'compute_batch_error': False,
         'compute_population_error': False,
         'compute_strain_error': False,
         'compute_reconstruction_error': False,
@@ -292,7 +299,7 @@ if __name__ == "__main__":
 
         simulation_options = {
             'd': 100,
-            'q': 50,
+            'q': 20,
             'q_true':10,
             'n': 5000,
             'n0': 0,
