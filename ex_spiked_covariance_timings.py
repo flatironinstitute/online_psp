@@ -21,7 +21,8 @@ generator_options = {
     'lambda_q': 5e-1,
     'normalize': True,
     'rho': 1e-2 / 5,
-    'scale_data': True
+    'scale_data': True,
+    'shuffle': False
 }
 
 simulation_options = {
@@ -53,13 +54,13 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
     return timing
 
 
-n_repetitions = 1
+n_repetitions = 10
 simulation_options['n'] = 10
 qs = [64, 128, 256, 512, 1024, 2048, 4096]
 results = dict()
 counter = 0
 colors = ['b', 'r', 'g','k']
-d = 8192
+d = 32768
 counter += 1
 ax = plt.subplot(1, 1, counter)
 simulation_options['d'] = d
