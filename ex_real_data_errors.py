@@ -30,7 +30,7 @@ error_options = {
 generator_options = {
     'method': 'real_data',
     'scale_data': True,
-    'shuffle' : True
+    'shuffle' : False
 }
 
 simulation_options = {
