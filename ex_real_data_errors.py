@@ -4,7 +4,6 @@
 # Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
 # %%
-# %%
 # imports
 from online_pca_simulations import run_simulation
 import os
@@ -31,7 +30,7 @@ error_options = {
 generator_options = {
     'method': 'real_data',
     'scale_data': True,
-    'shuffle' : False
+    'shuffle' : True
 }
 
 simulation_options = {
@@ -42,7 +41,6 @@ simulation_options = {
         'error_options': error_options,
         'pca_init': False,
         'init_ortho': True,
-        'n_epoch' : 1
 }
 
 algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
@@ -121,7 +119,7 @@ def run_test_wrapper(params):
 
 
 # %% parameters figure generation
-test_mode = 'illustrative_examples'  # can be 'illustrative_examples' or 'vary_q', 'vary_q_fix_qdata'
+test_mode = 'real_data_learning_curves'
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
 rerun_simulation = True  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, False)  # whether to use parallelization or to show results on the go
@@ -148,14 +146,16 @@ if parallelize:
 
         dview = multiprocessing.Pool(n_processes)
 # %%
-if test_mode == 'illustrative_examples':
+if test_mode == 'real_data_learning_curves':
     # %%
-    data_fold = os.path.abspath('./real_data_4_examples')
+    data_fold = os.path.abspath('./real_data_learning_curves')
     #redundant but there for flexibility
-    names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][-1:]
+    names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][:-1]
+    n_epochs = [30, 10, 30, 1][:-1]
     qs = [16]
     colors = ['b', 'r', 'g']
     n_repetitions = 1
+
     simulation_options['n'] = 'auto'
     plot = not parallelize
     if rerun_simulation:
@@ -165,7 +165,8 @@ if test_mode == 'illustrative_examples':
     for q in qs:
 
         counter_name = 0
-        for name in names:
+        for n_ep, name in zip(n_epochs, names):
+            simulation_options['n_epoch'] = n_ep
             counter_name += 1
             generator_options['filename'] = './datasets/' + name
             if not parallelize:

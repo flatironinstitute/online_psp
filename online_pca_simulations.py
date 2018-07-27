@@ -108,11 +108,15 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
     if error_options['compute_batch_error'] or error_options['compute_proj_error']:
         # Compute the subspace error of the approximation versus the offline estimate of the eigenvectors (use sample not pop)
-        eig_val, V = np.linalg.eigh(X.dot(X.T) / n)
-        idx = np.flip(np.argsort(eig_val), 0)
-        eig_val = eig_val[idx]
-        V = V[:, idx]
-        U_batch = V[:, :q_true]
+        U, s, _ = np.linalg.svd(X, full_matrices=0)
+        eig_val = s[:q] ** 2 / X.shape[-1]
+        U_batch = U[:, :q]
+
+        # eig_val, V = np.linalg.eigh(X.dot(X.T) / n)
+        # idx = np.flip(np.argsort(eig_val), 0)
+        # eig_val = eig_val[idx]
+        # V = V[:, idx]
+
     if error_options['compute_batch_error']:
         error_options['error_func_list'].append(('batch_err', lambda Uhat: util.subspace_error(Uhat, U_batch)))
 
@@ -186,9 +190,17 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         errs = util.initialize_errors(error_options, n_its)
         i = 0
         for _ in range(n_epoch):
-            for x in X[:, n0:].T:
+            # reshuffle each epoch if required
+            if generator_options['shuffle']:
+                order = np.random.permutation(np.arange(n0,X.shape[-1]))
+            else:
+                order = np.arange(n0, X.shape[-1])
+
+            for idx_sample in order:
+                x = X.T[idx_sample]
                 pca_fitter.fit_next(x)
                 Uhat = pca_fitter.get_components()
+
                 util.compute_errors(error_options, Uhat, i, errs)
                 i += 1
 

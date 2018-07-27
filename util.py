@@ -113,10 +113,10 @@ def load_dataset(dataset_name, return_U=True, q=None):
             q = X.shape[-1]
         X = X.T
         d, n = X.shape
-        eig_val, V = np.linalg.eigh(X.dot(X.T) / n)
-        idx = np.flip(np.argsort(eig_val), 0)
-        lam = eig_val[idx][:q]
-        U = V[:, idx][:, :q]
+        U,s,_ = np.linalg.svd(X, full_matrices=0)
+        lam = s[:q]**2/n
+        U = U[:,:q]
+
 
     else:
         U = 0
