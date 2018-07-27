@@ -12,8 +12,8 @@ import pylab as pl
 import time
 from util import subspace_error, generate_samples
 
-q = 64
-n_epoch = 1
+q = 16
+n_epoch = 50
 err_its = 64
 # Simulation parameters
 compute_error = True
@@ -23,12 +23,12 @@ init_ortho = True
 
 if spiked_covariance_test:
     print('** spiked_covariance')
-    d, n = 200, 5000
+    d, n = 900, 10000
     X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data)
     dset = 'spiked_covariance'
 else:
     dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat', 'MNIST.mat']
-    dset = dsets[-1]
+    dset = dsets[1]
     print('** ' + dset)
     options = {
         'filename': './datasets/' + dset,
@@ -53,10 +53,12 @@ ccipca = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1,
 lambda_1 *= 0
 ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
 scal = 100
-# lr = lambda t: 1/(0.1*t + 1e3)
+lr = lambda t: 1/(t + 5)
+# lr = lambda t: 1e-3
+
 if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T / scal,
                                  Minv0=scal * np.eye(q),
-                                 learning_rate=None)
+                                 learning_rate=lr)
 
 algorithms = {'ipca': ipca, 'if_mm_pca': if_mm_pca, 'ccipca': ccipca}
 # %% RUN ALGORITHMS
@@ -71,7 +73,7 @@ for name, algo in algorithms.items():
         for its, x in enumerate(X.T):
             algo.fit_next(x)
             if its % err_its == 0:
-                err.append(subspace_error(algo.get_components(False), U[:, :q]))
+                err.append(subspace_error(algo.get_components(), U[:, :q]))
     time_2 = time.time() - time_1
     errs[name] = err
     times[name] = time_2
@@ -79,7 +81,7 @@ for name, algo in algorithms.items():
 keys = list(algorithms.keys())
 keys.sort()
 for name in keys:
-    pl.semilogy(errs[name])
+    pl.loglog(errs[name])
     pl.ylabel('relative subspace error (pop.)')
     pl.xlabel('samples')
     # print('Elapsed time ' + name + ':' + str(times[name]))

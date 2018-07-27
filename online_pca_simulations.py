@@ -3,7 +3,7 @@
 # Author: Victor Minden (vminden@flatironinstitute.org) and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
 # Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
-
+#%%
 ##############################
 # Imports
 import numpy as np
@@ -138,9 +138,12 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         Uhat0 = U[:, :q]
     else:
         # Initialize using just the first data point and the rest random
-        n0 = 1
-        Uhat0 = np.random.normal(0, 1, (d, q)) / np.sqrt(d)
-        Uhat0[:, 0] = X[:, 0] / np.linalg.norm(X[:, 0], 2)
+        n0 = 0
+        Uhat0 = X[:, :q] / np.sqrt((X[:, :q] ** 2).sum(0))
+        # Uhat0 = np.random.normal(0, 1, (d, q)) / np.sqrt(d)
+        # Uhat0[:, 0] = X[:, 0] / np.linalg.norm(X[:, 0], 2)
+
+
 
     if init_ortho:
         # Optionally orthogonalize the initial guess
@@ -162,7 +165,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         scal = 100
         Minv0 = np.eye(q) * scal
         Uhat0 = Uhat0 / scal
-        learning_rate = lambda t: 1.0 / (2.0 * t + 5)
+        learning_rate = lambda t: 1.0 / (1*t + 5)
         pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
     elif pca_algorithm == 'minimax_PCA':
         tau = algorithm_options['tau']
@@ -170,7 +173,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         M0 = np.eye(q) / scal
         Uhat0 = Uhat0 / scal
 
-        def learning_rate(t): return 1.0 / (2.0 * t + 5)
+        def learning_rate(t): return 1.0 / (1*t + 5)
         pca_fitter = Minimax_PCA_CLASS(
             q, d, W0=Uhat0.T, M0=M0, tau=tau, learning_rate=learning_rate)
 
@@ -259,33 +262,34 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
         fig = plt.figure(1)
         ax = fig.add_subplot(1, 1, 1)
         plt.title(algorithm_options['pca_algorithm'])
+
         for err_name in errs:
             print(err_name + ': %f' % (errs[err_name][-1]))
             handle, = ax.plot(errs[err_name], label=err_name)
             handles.append(handle)
+
         plt.legend(handles=handles)
         plt.ylabel('Error (log10 scale)')
         plt.xlabel('Iteration')
         # plt.ylim(ymax=1, ymin=0)
         ax.set_yscale('log')
+        ax.set_xscale('log')
         plt.show()
 
 
 if __name__ == "__main__":
 
     error_options = {
-        'n_skip': 10,
+        'n_skip': 64,
         # TODO remove ortho option, it is duplicated
         'orthogonalize_iterate': False,
-        'compute_batch_error': False,
-        'compute_population_error': False,
+        'compute_batch_error': True,
+        'compute_population_error': True,
         'compute_strain_error': False,
         'compute_reconstruction_error': False,
-        'compute_proj_error': True
-
     }
 
-    spiked_covariance = True
+    spiked_covariance = False
     scale_data = True
 
     if spiked_covariance:
@@ -295,6 +299,7 @@ if __name__ == "__main__":
             'normalize': True,
             'rho': 1e-2 / 5,
             'scale_data': scale_data,
+            'shuffle': False
         }
 
         simulation_options = {
@@ -315,14 +320,15 @@ if __name__ == "__main__":
         generator_options = {
             'method': 'real_data',
             'filename': './datasets/' + dset,
-            'scale_data': scale_data
+            'scale_data': scale_data,
+            'shuffle': False
         }
         simulation_options = {
             'd': None,
-            'q': 50,
+            'q': 16,
             'n': 'auto',  # can set a number here, will select frames multiple times
             'n0': 0,
-            'n_epoch': 1,
+            'n_epoch': 50,
             'error_options': error_options,
             'pca_init': False,
             'init_ortho': True,

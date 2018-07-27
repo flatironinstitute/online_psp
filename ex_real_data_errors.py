@@ -42,7 +42,7 @@ simulation_options = {
         'error_options': error_options,
         'pca_init': False,
         'init_ortho': True,
-        'n_epoch' : 50
+        'n_epoch' : 1
 }
 
 algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
@@ -100,10 +100,11 @@ def run_test_wrapper(params):
         'q': simulation_options['q'],
         'n': simulation_options['n'],
         'filename': generator_options['filename'],
-        'n_epoch': 1,
+        'n_epoch': simulation_options['n_epoch'],
         'n0': 0,
-        'population_err': errs_batch,
-        'batch_err': errs_pop,
+        # TODO these were swapped
+        'population_err': errs_pop,
+        'batch_err': errs_batch,
     }
     d = simulation_options['d']
     q = simulation_options['q']
@@ -151,7 +152,7 @@ if test_mode == 'illustrative_examples':
     # %%
     data_fold = os.path.abspath('./real_data_4_examples')
     #redundant but there for flexibility
-    names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][:-3]
+    names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][-1:]
     qs = [16]
     colors = ['b', 'r', 'g']
     n_repetitions = 1
@@ -173,7 +174,6 @@ if test_mode == 'illustrative_examples':
             for algo in range(len(algos)):
                 print(name)
                 algorithm_options['pca_algorithm'] = algos[algo]
-                batch_err_avg = []
                 print((name, q))
                 simulation_options['q'] = q
                 all_pars.append(
@@ -185,17 +185,16 @@ if test_mode == 'illustrative_examples':
                 else:
                     if rerun_simulation:
                         errs_pop, errs_batch = run_test_wrapper(all_pars[-1])
-                        batch_err_avg.append(errs_batch.mean(0))
-                        batch_err_avg = np.array(batch_err_avg)
+                        batch_err_avg = (errs_batch.mean(0))
                     else:
                         fname = os.path.join(data_fold, '__'.join(
                             ['fname',name, 'q', str(q), 'algo', algos[algo]]) + '.npz')
                         # fname = os.path.join(data_fold, '__'.join(
                         #     ['rho',str(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
                         with np.load(fname) as ld:
-                            batch_err_avg.append(np.mean(ld['population_err'][()], 0))
+                            batch_err_avg = np.mean(ld['population_err'][()], 0)
 
-                if pop_err_avg is not None:
+                if batch_err_avg is not None:
                     plt.title('k=' + str(q))
                     line_bat, = ax.loglog(batch_err_avg.T, colors[algo])
                     line_bat.set_label(algos[algo] + '_batch')
@@ -205,7 +204,8 @@ if test_mode == 'illustrative_examples':
 
     if batch_err_avg is not None:
         ax.legend()
-        plt.xlabel('k')
+        plt.xlabel('sample')
+        plt.show()
         plt.pause(3)
 
     if parallelize:

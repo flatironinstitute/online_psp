@@ -111,11 +111,13 @@ def load_dataset(dataset_name, return_U=True, q=None):
     if return_U:
         if q is None:
             q = X.shape[-1]
-        pca = PCA(n_components=q)
-        pca.fit(X)
-        U = pca.components_.T
-        lam = pca.explained_variance_
         X = X.T
+        d, n = X.shape
+        eig_val, V = np.linalg.eigh(X.dot(X.T) / n)
+        idx = np.flip(np.argsort(eig_val), 0)
+        lam = eig_val[idx][:q]
+        U = V[:, idx][:, :q]
+
     else:
         U = 0
         lam = 0
@@ -265,6 +267,7 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
         X, U, lam = X * scale_factor, U, lam * (scale_factor ** 2)
 
     if shuffle:
+        print('SHUFFLING DATA!!!')
         X = X[np.random.permutation(len(X))]
     if return_U:
         return X, U, lam

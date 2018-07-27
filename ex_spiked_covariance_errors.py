@@ -3,9 +3,19 @@
 # Author: Victor Minden (vminden@flatironinstitute.org) and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
 # Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
-# %%
+
 # %%
 # imports
+try:
+    if __IPYTHON__:
+        print("Running under iPython")
+        # this is used for debugging purposes only. allows to reload classes
+        # when changed
+        get_ipython().magic('load_ext autoreload')
+        get_ipython().magic('autoreload 2')
+        get_ipython().magic('matplotlib osx')
+except NameError:
+    pass
 from online_pca_simulations import run_simulation
 import os
 import pylab as plt
@@ -24,7 +34,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 # general parameters
 
 error_options = {
-    'n_skip': 20,
+    'n_skip': 50,
     'orthogonalize_iterate': False,
     'compute_batch_error': True,
     'compute_population_error': True,
@@ -42,9 +52,6 @@ generator_options = {
 }
 
 simulation_options = {
-    'd': 200,
-    'q': 50,
-    'n': 1000,
     'n0': 0,
     'n_epoch': 1,
     'error_options': error_options,
@@ -107,8 +114,8 @@ def run_test_wrapper(params):
         'rho': generator_options['rho'],
         'n_epoch': 1,
         'n0': 0,
-        'population_err': errs_batch,
-        'batch_err': errs_pop,
+        'population_err': errs_pop,
+        'batch_err': errs_batch,
     }
     rho = generator_options['rho']
     d = simulation_options['d']
@@ -126,8 +133,8 @@ def run_test_wrapper(params):
 
 # %% parameters figure generation
 test_mode = 'vary_k'  # can be 'illustrative_examples' or 'vary_k'
-rhos = np.logspace(-4, -0.5, 10)  # controls SNR
-rerun_simulation = False  # whether to rerun from scratch or just show the results
+rhos = np.logspace(-4, -0.3, 10)  # controls SNR
+rerun_simulation = True  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
@@ -157,8 +164,8 @@ if test_mode == 'illustrative_examples':
     data_fold = os.path.abspath('./spiked_cov_4_examples')
     d_q_params = [(16, 2), (64, 8), (256, 32), (1024, 64)]
     colors = ['b', 'r', 'g']
-    n_repetitions = 15
-    simulation_options['n'] = 3000
+    n_repetitions = 1
+    simulation_options['n'] = 1000
     plot = not parallelize
     if rerun_simulation:
         os.mkdir(data_fold)
@@ -218,17 +225,16 @@ if test_mode == 'illustrative_examples':
         all_res = dview.map(run_test_wrapper, all_pars)
 
 # %%
-elif test_mode == 'vary_q' or test_mode == 'vary_q_fix_qdata':
+elif test_mode == 'vary_k':
     # %% vary k
-    if test_mode == 'vary_q':
-        data_fold = os.path.abspath('./spiked_cov_vary_k')
-    if test_mode == 'vary_q_fix_qdata':
-        data_fold = os.path.abspath('./spiked_cov_vary_k_fix_qdata')
-        lslsl
+    d_q_params = [(256, 16), (256, 128), (2048, 16), (2048, 128)]
+
+    data_fold = os.path.abspath('./spiked_cov_vary_k_d')
+
 
     n_repetitions = 15
-    simulation_options['n'] = 3000
-    d_q_params = [(1024, 2), (1024, 8), (1024, 32), (1024, 64), (1024, 128)]
+    simulation_options['n'] = 5000
+
 
     if rerun_simulation:
         os.mkdir(data_fold)
@@ -269,7 +275,7 @@ elif test_mode == 'vary_q' or test_mode == 'vary_q_fix_qdata':
                             batch_err_avg.append(np.mean(ld['population_err'][()], 0)[-1])
 
             if pop_err_avg is not None:
-                ax = plt.subplot(5, 2, 2 * counter + 1)
+                ax = plt.subplot(len(d_q_params), 2, 2 * counter + 1)
                 if algo ==0:
                     line_pop, = ax.loglog(rhos, pop_err_avg, 'o-')
                 else:
@@ -277,7 +283,7 @@ elif test_mode == 'vary_q' or test_mode == 'vary_q_fix_qdata':
 
                 line_pop.set_label('algo=' + algos[algo])
 
-                ax = plt.subplot(5, 2, 2 * counter + 2)
+                ax = plt.subplot(len(d_q_params), 2, 2 * counter + 2)
                 if algo == 0:
                     line_bat, = ax.loglog(rhos, batch_err_avg, 'o-')
                 else:
@@ -290,13 +296,13 @@ elif test_mode == 'vary_q' or test_mode == 'vary_q_fix_qdata':
 
 
     if pop_err_avg is not None:
-        for counter in range(5):
-            ax = plt.subplot(5, 2, 2 * counter + 1)
+        for counter in range(len(d_q_params)):
+            ax = plt.subplot(len(d_q_params), 2, 2 * counter + 1)
             plt.ylabel('population error')
             plt.xlabel('rho')
             plt.title('q=' + str(d_q_params[counter][-1]))
 
-            ax = plt.subplot(5, 2, 2 * counter + 2)
+            ax = plt.subplot(len(d_q_params), 2, 2 * counter + 2)
             plt.ylabel('batch error')
             plt.xlabel('rho')
             plt.title('q=' + str(d_q_params[counter][-1]))
@@ -304,7 +310,7 @@ elif test_mode == 'vary_q' or test_mode == 'vary_q_fix_qdata':
             plt.pause(2)
 
 
-        ax = plt.subplot(5, 2, 2 * counter + 2)
+        ax = plt.subplot(len(d_q_params), 2, 2 * counter + 2)
         ax.legend()
 
     if parallelize:
