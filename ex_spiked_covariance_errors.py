@@ -165,7 +165,7 @@ if test_mode == 'illustrative_examples':
     d_q_params = [(16, 2), (64, 8), (256, 32), (1024, 64)]
     colors = ['b', 'r', 'g']
     n_repetitions = 1
-    simulation_options['n'] = 1000
+    simulation_options['n'] = 3000
     plot = not parallelize
     if rerun_simulation:
         os.mkdir(data_fold)
