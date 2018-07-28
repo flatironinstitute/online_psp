@@ -271,8 +271,8 @@ elif test_mode == 'vary_k':
 
                         with np.load(fname) as ld:
                             print(pop_err_avg)
-                            pop_err_avg.append(np.mean(ld['batch_err'][()], 0)[-1])
-                            batch_err_avg.append(np.mean(ld['population_err'][()], 0)[-1])
+                            pop_err_avg.append(np.mean(ld['population_err'][()], 0)[-1])
+                            batch_err_avg.append(np.mean(ld['batch_err'][()], 0)[-1])
 
             if pop_err_avg is not None:
                 ax = plt.subplot(len(d_q_params), 2, 2 * counter + 1)
