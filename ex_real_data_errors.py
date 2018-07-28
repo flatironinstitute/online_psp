@@ -19,7 +19,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 # general parameters
 
 error_options = {
-    'n_skip': 64,
+    'n_skip': 50,
     'orthogonalize_iterate': False,
     'compute_batch_error': True,
     'compute_population_error': True,
@@ -126,7 +126,7 @@ def run_test_wrapper(params):
 # %% parameters figure generation
 test_mode = 'real_data_learning_curves'
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
-rerun_simulation = True  # whether to rerun from scratch or just show the results
+rerun_simulation = False  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
@@ -155,13 +155,13 @@ if test_mode == 'real_data_learning_curves':
     # %%
     data_fold = os.path.abspath('./real_data_learning_curves')
     #redundant but there for flexibility
-    names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][2:3]
-    n_epochs = [30, 10, 30, 1][2:3]
-    qs = [16, 64, 128, 256][1:2]
-    algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA'][1:2]
+    names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][:]
+    n_epochs = [30, 10, 30, 1][:]
+    qs = [16, 64, 128, 256][:3]
+    algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA'][:]
 
     colors = ['b', 'r', 'g']
-    n_repetitions = 15
+    n_repetitions = 10
 
     simulation_options['n'] = 'auto'
     plot = not parallelize
