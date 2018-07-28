@@ -111,11 +111,17 @@ def load_dataset(dataset_name, return_U=True, q=None):
     if return_U:
         if q is None:
             q = X.shape[-1]
+
+        pca = PCA(n_components=q,svd_solver='arpack')
+        pca.fit(X)
+        U = pca.components_.T
+        lam = pca.explained_variance_
         X = X.T
-        d, n = X.shape
-        U,s,_ = np.linalg.svd(X, full_matrices=0)
-        lam = s[:q]**2/n
-        U = U[:,:q]
+        # X = X.T
+        # d, n = X.shape
+        # U,s,_ = np.linalg.svd(X, full_matrices=0)
+        # lam = s[:q]**2/n
+        # U = U[:,:q]
 
 
     else:
@@ -268,7 +274,7 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
 
     if shuffle:
         print('SHUFFLING DATA!!!')
-        X = X[np.random.permutation(len(X))]
+        X = X[:,np.random.permutation(X.shape[-1])]
     if return_U:
         return X, U, lam
     else:

@@ -17,6 +17,7 @@ from if_minimax_subspace_projection import IF_minimax_PCA_CLASS
 from ccipca import CCIPCA_CLASS
 from incremental_pca import IncrementalPCA_CLASS
 from minimax_subspace_projection import Minimax_PCA_CLASS
+from sklearn.decomposition import PCA
 
 from collections import defaultdict
 from matplotlib import pyplot as plt
@@ -95,12 +96,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     d, n = X.shape
 
     print('RUNNING SIMULATION ON INPUT DATA:', X.shape)
-    if error_options['compute_strain_error'] or error_options['compute_reconstruction error']:
-        Xtest = X
-        XXtest = Xtest.T.dot(Xtest)
+    # if error_options['compute_strain_error'] or error_options['compute_reconstruction error']:
 
-        normsXtest = np.sum(np.abs(Xtest) ** 2, 0) ** 0.5
-        normsXXtest = np.linalg.norm(XXtest, 'fro')
 
     if error_options['compute_population_error']:
         # Compute the subspace error of the approximation versus the population eigenvectors (use pop not sample)
@@ -108,9 +105,14 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
 
     if error_options['compute_batch_error'] or error_options['compute_proj_error']:
         # Compute the subspace error of the approximation versus the offline estimate of the eigenvectors (use sample not pop)
-        U, s, _ = np.linalg.svd(X, full_matrices=0)
-        eig_val = s[:q] ** 2 / X.shape[-1]
-        U_batch = U[:, :q]
+        # U, s, _ = np.linalg.svd(X, full_matrices=0)
+        # eig_val = s[:q] ** 2 / X.shape[-1]
+        # U_batch = U[:, :q]
+
+        pca = PCA(n_components=q, svd_solver='arpack')
+        pca.fit(X.T)
+        U_batch = pca.components_.T
+        eig_val = pca.explained_variance_
 
         # eig_val, V = np.linalg.eigh(X.dot(X.T) / n)
         # idx = np.flip(np.argsort(eig_val), 0)
@@ -120,12 +122,16 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     if error_options['compute_batch_error']:
         error_options['error_func_list'].append(('batch_err', lambda Uhat: util.subspace_error(Uhat, U_batch)))
 
-    if error_options['compute_strain_error']:
-        # TODO: what is this does it even work anymore
-        error_options['error_func_list'].append(
-            ('strain_err', lambda Uhat: util.strain_error(Uhat.T.dot(Xtest), XXtest, normsXXtest)))
+    # if error_options['compute_strain_error']:
+    #     # TODO: what is this does it even work anymore
+    #     error_options['error_func_list'].append(
+    #         ('strain_err', lambda Uhat: util.strain_error(Uhat.T.dot(Xtest), XXtest, normsXXtest)))
 
     if error_options['compute_reconstruction_error']:
+        Xtest = X
+        # XXtest = Xtest.T.dot(Xtest)
+        normsXtest = np.sum(np.abs(Xtest) ** 2, 0) ** 0.5
+        # normsXXtest = np.linalg.norm(XXtest, 'fro')
         # TODO: allow in-sample testing? does this even work anymore
         error_options['error_func_list'].append(
             ('recon_err', lambda Uhat: util.reconstruction_error(Uhat, Xtest, normsXtest)))
@@ -169,7 +175,10 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         scal = 100
         Minv0 = np.eye(q) * scal
         Uhat0 = Uhat0 / scal
-        learning_rate = lambda t: 1.0 / (1*t + 5)
+        def learning_rate(t):
+            step = 1.0 / (2*t + 5)
+            return step
+
         pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
     elif pca_algorithm == 'minimax_PCA':
         tau = algorithm_options['tau']
@@ -177,7 +186,10 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         M0 = np.eye(q) / scal
         Uhat0 = Uhat0 / scal
 
-        def learning_rate(t): return 1.0 / (1*t + 5)
+        def learning_rate(t):
+            step = 1.0 / (2*t + 5)
+            return step
+
         pca_fitter = Minimax_PCA_CLASS(
             q, d, W0=Uhat0.T, M0=M0, tau=tau, learning_rate=learning_rate)
 
@@ -189,7 +201,8 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         n_its = X[:, n0:].shape[1] * n_epoch
         errs = util.initialize_errors(error_options, n_its)
         i = 0
-        for _ in range(n_epoch):
+        for iter_epoch in range(n_epoch):
+
             # reshuffle each epoch if required
             if generator_options['shuffle']:
                 order = np.random.permutation(np.arange(n0,X.shape[-1]))
@@ -200,7 +213,6 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
                 x = X.T[idx_sample]
                 pca_fitter.fit_next(x)
                 Uhat = pca_fitter.get_components()
-
                 util.compute_errors(error_options, Uhat, i, errs)
                 i += 1
 

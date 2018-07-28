@@ -30,7 +30,7 @@ error_options = {
 generator_options = {
     'method': 'real_data',
     'scale_data': True,
-    'shuffle' : False
+    'shuffle' : True
 }
 
 simulation_options = {
@@ -43,15 +43,16 @@ simulation_options = {
         'init_ortho': True,
 }
 
-algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
-algos = ['if_minimax_PCA', 'CCIPCA']
 
-algo = algos[0]
+# algos = ['if_minimax_PCA', 'CCIPCA']
+
+# algo = algos[0]
 algorithm_options = {
-    'pca_algorithm': algo,
+    # 'pca_algorithm': algo,
     'tau': 0.5,
     'tol': 1e-7,
 }
+
 
 
 # %%
@@ -81,14 +82,17 @@ def run_test_wrapper(params):
     generator_options, simulation_options, algorithm_options, data_fold, n_repetitions = params
     errs_pop = []
     errs_batch = []
+    errs_recon = []
     for _ in range(n_repetitions):
         err = run_test(generator_options=generator_options, simulation_options=simulation_options,
                        algorithm_options=algorithm_options)
         errs_pop.append(err['population_err'])
         errs_batch.append(err['batch_err'])
+        errs_recon.append(err['recon_err'])
 
     errs_pop = np.array(errs_pop)
     errs_batch = np.array(errs_batch)
+    errs_recon = np.array(errs_recon)
 
     output_dict = {
         'generator_options': generator_options,
@@ -103,6 +107,7 @@ def run_test_wrapper(params):
         # TODO these were swapped
         'population_err': errs_pop,
         'batch_err': errs_batch,
+        'recon_err': errs_recon
     }
     d = simulation_options['d']
     q = simulation_options['q']
@@ -115,14 +120,14 @@ def run_test_wrapper(params):
         save_name,
         **output_dict)
 
-    return errs_pop, errs_batch
+    return errs_pop, errs_batch, errs_recon
 
 
 # %% parameters figure generation
 test_mode = 'real_data_learning_curves'
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
 rerun_simulation = True  # whether to rerun from scratch or just show the results
-parallelize = np.logical_and(rerun_simulation, False)  # whether to use parallelization or to show results on the go
+parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
     n_processes = np.maximum(np.int(psutil.cpu_count()), 1)
@@ -150,16 +155,18 @@ if test_mode == 'real_data_learning_curves':
     # %%
     data_fold = os.path.abspath('./real_data_learning_curves')
     #redundant but there for flexibility
-    names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][:-1]
-    n_epochs = [30, 10, 30, 1][:-1]
-    qs = [16]
+    names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][2:3]
+    n_epochs = [30, 10, 30, 1][2:3]
+    qs = [16, 64, 128, 256][1:2]
+    algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA'][1:2]
+
     colors = ['b', 'r', 'g']
-    n_repetitions = 1
+    n_repetitions = 15
 
     simulation_options['n'] = 'auto'
     plot = not parallelize
     if rerun_simulation:
-        os.mkdir(data_fold)
+        os.makedirs(data_fold, exist_ok=True)
     counter_q = 0
     all_pars = []
     for q in qs:
@@ -172,9 +179,10 @@ if test_mode == 'real_data_learning_curves':
             if not parallelize:
                 ax = plt.subplot(len(qs), len(names), len(names)*counter_q + counter_name)
 
-            for algo in range(len(algos)):
+            for algo, algor in enumerate(algos):
                 print(name)
-                algorithm_options['pca_algorithm'] = algos[algo]
+
+                algorithm_options['pca_algorithm'] = algor
                 print((name, q))
                 simulation_options['q'] = q
                 all_pars.append(
@@ -185,15 +193,15 @@ if test_mode == 'real_data_learning_curves':
                     batch_err_avg = None
                 else:
                     if rerun_simulation:
-                        errs_pop, errs_batch = run_test_wrapper(all_pars[-1])
-                        batch_err_avg = (errs_batch.mean(0))
+                        errs_pop, errs_batch, errs_recon = run_test_wrapper(all_pars[-1])
+                        batch_err_avg = np.median(errs_batch, 0)
                     else:
                         fname = os.path.join(data_fold, '__'.join(
-                            ['fname',name, 'q', str(q), 'algo', algos[algo]]) + '.npz')
+                            ['fname',name, 'q', str(q), 'algo', algor]) + '.npz')
                         # fname = os.path.join(data_fold, '__'.join(
                         #     ['rho',str(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
                         with np.load(fname) as ld:
-                            batch_err_avg = np.mean(ld['population_err'][()], 0)
+                            batch_err_avg = np.median(ld['batch_err'][()], 0)
 
                 if batch_err_avg is not None:
                     plt.title('k=' + str(q))
@@ -201,6 +209,9 @@ if test_mode == 'real_data_learning_curves':
                     line_bat.set_label(algos[algo] + '_batch')
                     plt.ylabel('subspace error')
                     plt.pause(.1)
+
+
+            plt.show()
         counter_q += 1
 
     if batch_err_avg is not None:
@@ -212,6 +223,6 @@ if test_mode == 'real_data_learning_curves':
     if parallelize:
         all_res = dview.map(run_test_wrapper, all_pars)
 
-# %% stop cluster
+    # %% stop cluster
 if parallelize:
     dview.terminate()

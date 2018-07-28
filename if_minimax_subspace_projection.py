@@ -98,7 +98,6 @@ class IF_minimax_PCA_CLASS:
 
         # M <- M + eta(self.t)/tau * (y*y' - M), using SMW
         step = step / tau
-
         Minv = Minv / (1 - step)
         z = Minv.dot(y)
         c = step / (1 + step * np.dot(z, y))
