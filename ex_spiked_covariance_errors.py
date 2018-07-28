@@ -60,9 +60,9 @@ simulation_options = {
 }
 
 algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA', 'minimax_PCA']
-algo = algos[0]
+# algo = algos[0]
 algorithm_options = {
-    'pca_algorithm': algo,
+    # 'pca_algorithm': algo,
     'tau': 0.5,
     'tol': 1e-7
 }
@@ -134,8 +134,9 @@ def run_test_wrapper(params):
 # %% parameters figure generation
 test_mode = 'vary_k'  # can be 'illustrative_examples' or 'vary_k'
 rhos = np.logspace(-4, -0.3, 10)  # controls SNR
-rerun_simulation = True  # whether to rerun from scratch or just show the results
+rerun_simulation = False  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
+algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA', 'minimax_PCA'][:-1]
 # %% start cluster
 if parallelize:
     n_processes = np.maximum(np.int(psutil.cpu_count()), 1)
