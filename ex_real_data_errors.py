@@ -82,17 +82,17 @@ def run_test_wrapper(params):
     generator_options, simulation_options, algorithm_options, data_fold, n_repetitions = params
     errs_pop = []
     errs_batch = []
-    errs_recon = []
+    #errs_recon = []
     for _ in range(n_repetitions):
         err = run_test(generator_options=generator_options, simulation_options=simulation_options,
                        algorithm_options=algorithm_options)
         errs_pop.append(err['population_err'])
         errs_batch.append(err['batch_err'])
-        errs_recon.append(err['recon_err'])
+        # errs_recon.append(err['recon_err'])
 
     errs_pop = np.array(errs_pop)
     errs_batch = np.array(errs_batch)
-    errs_recon = np.array(errs_recon)
+    #errs_recon = np.array(errs_recon)
 
     output_dict = {
         'generator_options': generator_options,
@@ -107,7 +107,7 @@ def run_test_wrapper(params):
         # TODO these were swapped
         'population_err': errs_pop,
         'batch_err': errs_batch,
-        'recon_err': errs_recon
+     #   'recon_err': errs_recon
     }
     d = simulation_options['d']
     q = simulation_options['q']
@@ -120,7 +120,7 @@ def run_test_wrapper(params):
         save_name,
         **output_dict)
 
-    return errs_pop, errs_batch, errs_recon
+    return errs_pop, errs_batch#, errs_recon
 
 
 # %% parameters figure generation
@@ -193,7 +193,7 @@ if test_mode == 'real_data_learning_curves':
                     batch_err_avg = None
                 else:
                     if rerun_simulation:
-                        errs_pop, errs_batch, errs_recon = run_test_wrapper(all_pars[-1])
+                        errs_pop, errs_batch = run_test_wrapper(all_pars[-1])
                         batch_err_avg = np.median(errs_batch, 0)
                     else:
                         fname = os.path.join(data_fold, '__'.join(

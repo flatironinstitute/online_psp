@@ -232,8 +232,8 @@ elif test_mode == 'vary_k':
     data_fold = os.path.abspath('./spiked_cov_vary_k_d')
 
 
-    n_repetitions = 15
-    simulation_options['n'] = 5000
+    n_repetitions = 10
+    simulation_options['n'] = 3000
 
 
     if rerun_simulation:
