@@ -132,11 +132,9 @@ def run_test_wrapper(params):
 
 
 # %% parameters figure generation
-test_mode = 'vary_k'  # can be 'illustrative_examples' or 'vary_k'
 rhos = np.logspace(-4, -0.3, 10)  # controls SNR
 rerun_simulation = False  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
-algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA', 'minimax_PCA'][:-1]
 # %% start cluster
 if parallelize:
     n_processes = np.maximum(np.int(psutil.cpu_count()), 1)
@@ -159,86 +157,27 @@ if parallelize:
             pass
 
         dview = multiprocessing.Pool(n_processes)
-# %%
-if test_mode == 'illustrative_examples':
-    # %%
-    data_fold = os.path.abspath('./spiked_cov_4_examples')
-    d_q_params = [(16, 2), (64, 8), (256, 32), (1024, 64)]
-    colors = ['b', 'r', 'g']
-    n_repetitions = 1
-    simulation_options['n'] = 3000
-    plot = not parallelize
-    if rerun_simulation:
-        os.mkdir(data_fold)
-    counter = 0
-    all_pars = []
-    for d, q in d_q_params:
-        simulation_options['d'] = d
-        simulation_options['q'] = q
-        counter += 1
-        if not parallelize:
-            ax = plt.subplot(4, 1, counter)
-        for algo in range(3):
-            algorithm_options['pca_algorithm'] = algos[algo]
-            pop_err_avg = []
-            batch_err_avg = []
-            for rho in rhos:
-                print((d, q, rho))
-                generator_options['rho'] = rho
-                all_pars.append(
-                    [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold,
-                     n_repetitions])
 
-                if parallelize:
-                    pop_err_avg = None
-                    batch_err_avg = None
-                else:
-                    if rerun_simulation:
-                        errs_pop, errs_batch = run_test_wrapper(all_pars[-1])
-                        pop_err_avg.append(errs_pop.mean(0)[-1])
-                        batch_err_avg.append(errs_batch.mean(0)[-1])
-                        errs_pop = np.array(errs_pop)
-                        errs_batch = np.array(errs_batch)
-                    else:
-                        fname = os.path.join(data_fold, '__'.join(
-                            ['rho', "{:.6f}".format(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
-                        # fname = os.path.join(data_fold, '__'.join(
-                        #     ['rho',str(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
-                        with np.load(fname) as ld:
-                            pop_err_avg.append(np.mean(ld['batch_err'][()], 0)[-1])
-                            batch_err_avg.append(np.mean(ld['population_err'][()], 0)[-1])
-
-            if pop_err_avg is not None:
-                plt.title('d=' + str(d) + ' k=' + str(q))
-                line_pop, = ax.loglog(rhos, pop_err_avg, '.-' + colors[algo])
-                line_bat, = ax.loglog(rhos, batch_err_avg, '-.' + colors[algo])
-                line_pop.set_label(algos[algo] + '_pop')
-                line_bat.set_label(algos[algo] + '_batch')
-                plt.ylabel('projection error')
-                plt.pause(.1)
-
-    if pop_err_avg is not None:
-        ax.legend()
-        plt.xlabel('rho')
-        plt.pause(3)
-
-    if parallelize:
-        all_res = dview.map(run_test_wrapper, all_pars)
 
 # %%
-elif test_mode == 'vary_k':
+for t_ in [0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
+    algorithm_options['t'] = t_
     # %% vary k
     d_q_params = [(256, 16), (256, 128), (2048, 16), (2048, 128)]
-
-    data_fold = os.path.abspath('./spiked_cov_vary_k_d')
-
+    data_fold = os.path.abspath('./spiked_cov_vary_k_d_t_' + str(t_))
+    if t_ == 0.5:
+        algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
+    else:
+        algos = ['if_minimax_PCA']
 
     n_repetitions = 10
-    simulation_options['n'] = 3000
+    simulation_options['n'] = 6000
 
 
     if rerun_simulation:
         os.mkdir(data_fold)
+    else:
+        plt.figure()
 
     all_pars = []
     counter = 0
