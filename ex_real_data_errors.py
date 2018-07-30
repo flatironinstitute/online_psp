@@ -126,7 +126,7 @@ def run_test_wrapper(params):
 # %% parameters figure generation
 test_mode = 'real_data_learning_curves'
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
-rerun_simulation = False  # whether to rerun from scratch or just show the results
+rerun_simulation = True  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
@@ -151,14 +151,19 @@ if parallelize:
 
         dview = multiprocessing.Pool(n_processes)
 # %%
-if test_mode == 'real_data_learning_curves':
+for t_ in np.arange(0.5, 1.5, 0.1):
+    algorithm_options['t'] = t_
     # %%
-    data_fold = os.path.abspath('./real_data_learning_curves')
+    data_fold = os.path.abspath('./real_data_learning_curves_t_' + str(t_))
     #redundant but there for flexibility
     names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][:]
     n_epochs = [30, 10, 30, 1][:]
     qs = [16, 64, 128, 256][:3]
-    algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA'][:]
+
+    if t_ == 0.5:
+        algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
+    else:
+        algos = ['if_minimax_PCA']
 
     colors = ['b', 'r', 'g']
     n_repetitions = 10
@@ -167,6 +172,8 @@ if test_mode == 'real_data_learning_curves':
     plot = not parallelize
     if rerun_simulation:
         os.makedirs(data_fold, exist_ok=True)
+    else:
+        plt.figure()
     counter_q = 0
     all_pars = []
     for q in qs:

@@ -176,7 +176,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         Minv0 = np.eye(q) * scal
         Uhat0 = Uhat0 / scal
         def learning_rate(t):
-            step = 1.0 / (2*t + 5)
+            step = 1.0 / (algorithm_options['t']*t + 5)
             return step
 
         pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
@@ -187,7 +187,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         Uhat0 = Uhat0 / scal
 
         def learning_rate(t):
-            step = 1.0 / (2*t + 5)
+            step = 1.0 / (algorithm_options['t']*t + 5)
             return step
 
         pca_fitter = Minimax_PCA_CLASS(
