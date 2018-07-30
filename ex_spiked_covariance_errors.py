@@ -133,11 +133,11 @@ def run_test_wrapper(params):
 
 # %% parameters figure generation
 rhos = np.logspace(-4, -0.3, 10)  # controls SNR
-rerun_simulation = False  # whether to rerun from scratch or just show the results
+rerun_simulation = True  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
-    n_processes = np.maximum(np.int(psutil.cpu_count()), 1)
+    n_processes = np.maximum(np.int(psutil.cpu_count()/2), 1)
     if len(multiprocessing.active_children()) > 0:
         try:
             dview.terminate()
@@ -160,7 +160,8 @@ if parallelize:
 
 
 # %%
-for t_ in [0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
+all_pars = []
+for t_ in [0.6, 0.7, 0.8, 1, 1.5, 2]:
     algorithm_options['t'] = t_
     # %% vary k
     d_q_params = [(256, 16), (256, 128), (2048, 16), (2048, 128)]
@@ -179,13 +180,13 @@ for t_ in [0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
     else:
         plt.figure()
 
-    all_pars = []
+
     counter = 0
     for d, q in d_q_params:
 
         simulation_options['d'] = d
         simulation_options['q'] = q
-        for algo in range(3):
+        for algo in range(len(algos)):
             algorithm_options['pca_algorithm'] = algos[algo]
             pop_err_avg = []
             batch_err_avg = []
@@ -193,7 +194,7 @@ for t_ in [0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
                 generator_options['rho'] = rho
                 print((d, q, rho))
                 all_pars.append(
-                    [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold,
+                    [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold[:],
                      n_repetitions])
                 if parallelize:
                     pop_err_avg = None
@@ -253,8 +254,8 @@ for t_ in [0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
         ax = plt.subplot(len(d_q_params), 2, 2 * counter + 2)
         ax.legend()
 
-    if parallelize:
-        all_errs = dview.map(run_test_wrapper, all_pars)
+if parallelize:
+    all_errs = dview.map(run_test_wrapper, all_pars)
 
 # %% stop cluster
 if parallelize:

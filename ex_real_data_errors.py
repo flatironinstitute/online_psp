@@ -124,13 +124,12 @@ def run_test_wrapper(params):
 
 
 # %% parameters figure generation
-test_mode = 'real_data_learning_curves'
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
 rerun_simulation = True  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
-    n_processes = np.maximum(np.int(psutil.cpu_count()), 1)
+    n_processes = np.maximum(np.int(psutil.cpu_count()/2), 1)
     if len(multiprocessing.active_children()) > 0:
         try:
             dview.terminate()
@@ -151,7 +150,8 @@ if parallelize:
 
         dview = multiprocessing.Pool(n_processes)
 # %%
-for t_ in np.arange(0.5, 1.5, 0.1):
+all_pars = []
+for t_ in [0.7, 0.8, 1, 1.5, 2]:
     algorithm_options['t'] = t_
     # %%
     data_fold = os.path.abspath('./real_data_learning_curves_t_' + str(t_))
@@ -175,7 +175,7 @@ for t_ in np.arange(0.5, 1.5, 0.1):
     else:
         plt.figure()
     counter_q = 0
-    all_pars = []
+
     for q in qs:
 
         counter_name = 0
@@ -193,7 +193,7 @@ for t_ in np.arange(0.5, 1.5, 0.1):
                 print((name, q))
                 simulation_options['q'] = q
                 all_pars.append(
-                    [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold,
+                    [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold[:],
                      n_repetitions])
 
                 if parallelize:
@@ -227,8 +227,8 @@ for t_ in np.arange(0.5, 1.5, 0.1):
         plt.show()
         plt.pause(3)
 
-    if parallelize:
-        all_res = dview.map(run_test_wrapper, all_pars)
+if parallelize:
+    all_res = dview.map(run_test_wrapper, all_pars)
 
     # %% stop cluster
 if parallelize:
