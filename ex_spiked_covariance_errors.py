@@ -133,7 +133,7 @@ def run_test_wrapper(params):
 
 # %% parameters figure generation
 rhos = np.logspace(-4, -0.3, 10)  # controls SNR
-rerun_simulation = True  # whether to rerun from scratch or just show the results
+rerun_simulation = False  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
@@ -161,13 +161,13 @@ if parallelize:
 
 # %%
 all_pars = []
-for t_ in [0.6, 0.7, 0.8, 1, 1.5, 2]:
+for t_ in [0.5, 0.6, 1.5, 2]:#[0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
     algorithm_options['t'] = t_
     # %% vary k
     d_q_params = [(256, 16), (256, 128), (2048, 16), (2048, 128)]
     data_fold = os.path.abspath('./spiked_cov_vary_k_d_t_' + str(t_))
     if t_ == 0.5:
-        algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
+        algos = ['incremental_PCA', 'CCIPCA']
     else:
         algos = ['if_minimax_PCA']
 
@@ -178,7 +178,8 @@ for t_ in [0.6, 0.7, 0.8, 1, 1.5, 2]:
     if rerun_simulation:
         os.mkdir(data_fold)
     else:
-        plt.figure()
+        1
+        # plt.figure()
 
 
     counter = 0
@@ -218,18 +219,18 @@ for t_ in [0.6, 0.7, 0.8, 1, 1.5, 2]:
             if pop_err_avg is not None:
                 ax = plt.subplot(len(d_q_params), 2, 2 * counter + 1)
                 if algo ==0:
-                    line_pop, = ax.loglog(rhos, pop_err_avg, 'o-')
+                    line_pop, = ax.loglog(rhos, pop_err_avg)
                 else:
-                    line_pop, = ax.loglog(rhos, pop_err_avg,'.-')
+                    line_pop, = ax.loglog(rhos, pop_err_avg)
 
-                line_pop.set_label('algo=' + algos[algo])
+                line_pop.set_label('t_:' + str(t_) + ',' + algos[algo])
 
                 ax = plt.subplot(len(d_q_params), 2, 2 * counter + 2)
                 if algo == 0:
-                    line_bat, = ax.loglog(rhos, batch_err_avg, 'o-')
+                    line_bat, = ax.loglog(rhos, batch_err_avg)
                 else:
-                    line_bat, = ax.loglog(rhos, batch_err_avg,'.-')
-                line_bat.set_label('algo=' + algos[algo])
+                    line_bat, = ax.loglog(rhos, batch_err_avg)
+                line_bat.set_label('t_:' + str(t_) + ',' + algos[algo])
 
                 plt.pause(.1)
 

@@ -125,7 +125,7 @@ def run_test_wrapper(params):
 
 # %% parameters figure generation
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
-rerun_simulation = True  # whether to rerun from scratch or just show the results
+rerun_simulation = False  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
@@ -151,7 +151,8 @@ if parallelize:
         dview = multiprocessing.Pool(n_processes)
 # %%
 all_pars = []
-for t_ in [0.7, 0.8, 1, 1.5, 2]:
+
+for t_ in  [0.5, 0.6, 1.5, 2]:# [0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
     algorithm_options['t'] = t_
     # %%
     data_fold = os.path.abspath('./real_data_learning_curves_t_' + str(t_))
@@ -161,7 +162,7 @@ for t_ in [0.7, 0.8, 1, 1.5, 2]:
     qs = [16, 64, 128, 256][:3]
 
     if t_ == 0.5:
-        algos = ['if_minimax_PCA', 'incremental_PCA', 'CCIPCA']
+        algos = ['incremental_PCA', 'CCIPCA']
     else:
         algos = ['if_minimax_PCA']
 
@@ -173,7 +174,8 @@ for t_ in [0.7, 0.8, 1, 1.5, 2]:
     if rerun_simulation:
         os.makedirs(data_fold, exist_ok=True)
     else:
-        plt.figure()
+        1
+        #plt.figure()
     counter_q = 0
 
     for q in qs:
@@ -211,9 +213,9 @@ for t_ in [0.7, 0.8, 1, 1.5, 2]:
                             batch_err_avg = np.median(ld['batch_err'][()], 0)
 
                 if batch_err_avg is not None:
-                    plt.title('k=' + str(q))
-                    line_bat, = ax.loglog(batch_err_avg.T, colors[algo])
-                    line_bat.set_label(algos[algo] + '_batch')
+                    plt.title('k=' + str(q)+','+ name)
+                    line_bat, = ax.loglog(batch_err_avg.T)
+                    line_bat.set_label('t_'+str(t_)+ ',' + algos[algo])
                     plt.ylabel('subspace error')
                     plt.pause(.1)
 
