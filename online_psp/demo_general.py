@@ -27,7 +27,7 @@ if spiked_covariance_test:
     X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data)
     dset = 'spiked_covariance'
 else:
-    dsets = ['ATT_faces_112_92.mat', 'ORL_32x32.mat', 'YaleB_32x32.mat', 'MNIST.mat']
+    dsets = ['ATT_faces_112_92.mat', 'YaleB_32x32.mat', 'MNIST.mat']
     dset = dsets[1]
     print('** ' + dset)
     options = {

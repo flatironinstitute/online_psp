@@ -16,17 +16,9 @@ from sklearn.decomposition import PCA
 def compute_errors(error_options, Uhat, t, errs, M=None):
     if t % error_options['n_skip']:
         return
-    if error_options['orthogonalize_iterate']:
-        U, _ = np.linalg.qr(Uhat)
-    else:
-        U = Uhat
+
     for i, (fname, f) in enumerate(error_options['error_func_list']):
-        if fname == 'batch_alignment_err':
-            errs[fname][t] = f(Uhat)
-        elif fname == 'diag_err':
-            errs[fname][t] = f(M)
-        else:
-            errs[fname][t] = f(U)
+        errs[fname][t] = f(Uhat)
 
 def proj_error(Uhat, U, relative_error_flag=True):
     K_true = U.shape[1]
@@ -64,18 +56,6 @@ def subspace_error(Uhat, U, relative_error_flag=True):
     return err
 
 
-# def reconstruction_error(Uhat, X, normsX):
-#     # Compute the mean relative l2 reconstruction error of the vectors in X
-#     res = X - Uhat.dot(Uhat.T.dot(X))
-#     res_norms = np.sum(np.abs(res) ** 2, 0) ** 0.5
-#     return np.mean(res_norms / normsX)
-#
-#
-# def strain_error(Y, XX, normXX):
-#     # Compute the strain cost function error relative to norm of X^TX
-#     return np.linalg.norm(Y.T.dot(Y) - XX, 'fro') / normXX
-
-
 def load_dataset(dataset_name, return_U=True, K=None):
     '''
 
@@ -102,8 +82,6 @@ def load_dataset(dataset_name, return_U=True, K=None):
 
     ld = loadmat(dataset_name)
     fea = ld['fea']
-    # gnd = ld['gnd']
-    # center data
     X = fea.astype(np.float)
     X -= X.mean(0)[None, :]
 
@@ -226,7 +204,7 @@ def generate_samples(K=None, N=None, D=None, method='spiked_covariance', options
     elif method == 'real_data':
         if options is None:
             options = {
-                'filename': './datasets/ORL_32x32.mat',
+                'filename': './datasets/MNIST.mat',
                 'return_U': True
             }
         return_U = options['return_U']

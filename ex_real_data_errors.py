@@ -156,6 +156,7 @@ for t_ in  [0.5, 0.6, 1.5, 2]:# [0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
     # %%
     data_fold = os.path.abspath('./real_data_learning_curves_t_' + str(t_))
     #redundant but there for flexibility
+    #TODO fix me
     names = ['ORL_32x32.mat','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][:]
     n_epochs = [30, 10, 30, 1][:]
     qs = [16, 64, 128, 256][:3]
