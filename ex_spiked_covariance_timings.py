@@ -6,7 +6,7 @@
 
 # %%
 # imports
-from online_pca_simulations import run_simulation
+from online_psp.online_psp_simulations import run_simulation
 import os
 import pylab as plt
 import numpy as np

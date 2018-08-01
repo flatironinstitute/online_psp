@@ -4,13 +4,13 @@
 # Notes: Adapted from code by Andrea Giovannucci and Cengiz Pehlevan
 # Reference: (Cardot and Degras, 2015)
 ##############################
-from incremental_pca import IncrementalPCA_CLASS
-from ccipca import CCIPCA_CLASS
-from if_minimax_subspace_projection import IF_minimax_PCA_CLASS
+from online_psp.incremental_pca import IPCA
+from ccipca import CCIPCA
+from online_psp.fast_similarity_matching import FSM
 import numpy as np
 import pylab as pl
 import time
-from util import subspace_error, generate_samples
+from online_psp.util import subspace_error, generate_samples
 
 q = 16
 n_epoch = 50
@@ -34,7 +34,7 @@ else:
         'filename': './datasets/' + dset,
         'return_U': True
     }
-    X, U, sigma2 = generate_samples(q, n='auto', d=None,
+    X, U, sigma2 = generate_samples(q, N='auto', D=None,
                                     method='real_data', options=options, scale_data=scale_data,
                                     sample_with_replacement=True)
     d, n = X.shape
@@ -48,17 +48,17 @@ if init_ortho:
     # Optionally orthogonalize the initial guess
     Uhat0, _ = np.linalg.qr(Uhat0)
 
-ccipca = CCIPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1,
-                      cython='auto')
+ccipca = CCIPCA(q, d, Uhat0=Uhat0, sigma2_0=lambda_1,
+                cython='auto')
 lambda_1 *= 0
-ipca = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda_1)
+ipca = IPCA(q, d, Uhat0=Uhat0, sigma2_0=lambda_1)
 scal = 100
 lr = lambda t: 1/(t + 5)
 # lr = lambda t: 1e-3
 
-if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T / scal,
-                                 Minv0=scal * np.eye(q),
-                                 learning_rate=lr)
+if_mm_pca = FSM(q, d, W0=Uhat0.T / scal,
+                Minv0=scal * np.eye(q),
+                learning_rate=lr)
 
 algorithms = {'ipca': ipca, 'if_mm_pca': if_mm_pca, 'ccipca': ccipca}
 # %% RUN ALGORITHMS

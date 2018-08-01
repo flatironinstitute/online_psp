@@ -7,16 +7,14 @@
 ##############################
 # Imports
 import numpy as np
-import scipy.io as sio
-from scipy.linalg import solve as solve
 import os
-import util
+from online_psp import util
 import time
 
-from if_minimax_subspace_projection import IF_minimax_PCA_CLASS
-from ccipca import CCIPCA_CLASS
-from incremental_pca import IncrementalPCA_CLASS
-from minimax_subspace_projection import Minimax_PCA_CLASS
+from fast_similarity_matching import FSM
+from ccipca import CCIPCA
+from incremental_pca import IPCA
+from similarity_matching import SM
 from sklearn.decomposition import PCA
 
 from collections import defaultdict
@@ -164,11 +162,11 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
     if pca_algorithm == 'CCIPCA':
         # TODO: Maybe lambda0 should be sorted in descending order?
         lambda0 = 1e-8 * np.ones(q)  # np.sort(np.abs(np.random.normal(0, 1, (q,))))[::-1]
-        pca_fitter = CCIPCA_CLASS(q, d, cython='auto', Uhat0=Uhat0, lambda0=lambda0)
+        pca_fitter = CCIPCA(q, d, cython='auto', Uhat0=Uhat0, sigma2_0=lambda0)
     elif pca_algorithm == 'incremental_PCA':
         tol = algorithm_options['tol']
         lambda0 = np.zeros(q)  # 0*np.sort(np.abs(np.random.normal(0, 1, (q,))))[::-1]
-        pca_fitter = IncrementalPCA_CLASS(q, d, Uhat0=Uhat0, lambda0=lambda0, tol=tol)
+        pca_fitter = IPCA(q, d, Uhat0=Uhat0, sigma2_0=lambda0, tol=tol)
     elif pca_algorithm == 'if_minimax_PCA':
         # What if we scale W0 down and Minv0 up
         tau = algorithm_options['tau']
@@ -178,8 +176,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
         def learning_rate(t):
             step = 1.0 / (algorithm_options['t']*t + 5)
             return step
-
-        pca_fitter = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
+        pca_fitter = FSM(q, d, W0=Uhat0.T, Minv0=Minv0, tau=tau, learning_rate=learning_rate)
     elif pca_algorithm == 'minimax_PCA':
         tau = algorithm_options['tau']
         scal = 100
@@ -190,7 +187,7 @@ def run_simulation(output_folder, simulation_options, generator_options, algorit
             step = 1.0 / (algorithm_options['t']*t + 5)
             return step
 
-        pca_fitter = Minimax_PCA_CLASS(
+        pca_fitter = SM(
             q, d, W0=Uhat0.T, M0=M0, tau=tau, learning_rate=learning_rate)
 
     else:

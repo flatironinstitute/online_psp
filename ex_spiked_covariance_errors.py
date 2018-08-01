@@ -16,11 +16,10 @@ try:
         get_ipython().magic('matplotlib osx')
 except NameError:
     pass
-from online_pca_simulations import run_simulation
+from online_psp.online_psp_simulations import run_simulation
 import os
 import pylab as plt
 import numpy as np
-from glob import glob
 import psutil
 import multiprocessing
 import matplotlib

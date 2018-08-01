@@ -1,13 +1,14 @@
 # Title: util.py
-# Description: Various utilities useful for online PCA tests
-# Author: Victor Minden (vminden@flatironinstitute.org)
+# Description: Various utilities useful for online PSP tests
+# Author: Victor Minden (vminden@flatironinstitute.org) and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
+
+#TODO: comments and docstrings
 
 ##############################
 # Imports
 import numpy as np
 from scipy.io import loadmat
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import normalize
 
 
 ##############################
@@ -28,13 +29,12 @@ def compute_errors(error_options, Uhat, t, errs, M=None):
             errs[fname][t] = f(U)
 
 def proj_error(Uhat, U, relative_error_flag=True):
-    q_true = U.shape[1]
+    K_true = U.shape[1]
     A = Uhat.T.dot(U)
     err = np.linalg.norm(U - Uhat.dot(A))
     if relative_error_flag:
-        err = err / np.sqrt(q_true)
+        err = err / np.sqrt(K_true)
     return err
-    # return np.linalg.norm(np.dot(Uhat, Uhat.T) - np.dot(U, U.T), ord='fro')
 
 
 
@@ -47,37 +47,36 @@ def subspace_error(Uhat, U, relative_error_flag=True):
     """
     Parameters:
     ====================
-    Uhat -- The approximation Uhat of an orthonormal basis for the PCA subspace of size d by q
-    U    -- An orthonormal basis for the PCA subspace of size d by q
+    Uhat -- The approximation Uhat of an orthonormal basis for the PCA subspace of size D by K
+    U    -- An orthonormal basis for the PCA subspace of size D by K
 
     Output:
     ====================
     err -- the (relative) Frobenius norm error
     """
 
-    q = U.shape[1]
+    K = U.shape[1]
     A = Uhat.T.dot(U)
     B = Uhat.T.dot(Uhat)
-    err = np.sqrt(q + np.trace(B.dot(B)) - 2 * np.trace(A.dot(A.T)))
+    err = np.sqrt(K + np.trace(B.dot(B)) - 2 * np.trace(A.dot(A.T)))
     if relative_error_flag:
-        err = err / np.sqrt(q)
+        err = err / np.sqrt(K)
     return err
-    # return np.linalg.norm(np.dot(Uhat, Uhat.T) - np.dot(U, U.T), ord='fro')
 
 
-def reconstruction_error(Uhat, X, normsX):
-    # Compute the mean relative l2 reconstruction error of the vectors in X
-    res = X - Uhat.dot(Uhat.T.dot(X))
-    res_norms = np.sum(np.abs(res) ** 2, 0) ** 0.5
-    return np.mean(res_norms / normsX)
+# def reconstruction_error(Uhat, X, normsX):
+#     # Compute the mean relative l2 reconstruction error of the vectors in X
+#     res = X - Uhat.dot(Uhat.T.dot(X))
+#     res_norms = np.sum(np.abs(res) ** 2, 0) ** 0.5
+#     return np.mean(res_norms / normsX)
+#
+#
+# def strain_error(Y, XX, normXX):
+#     # Compute the strain cost function error relative to norm of X^TX
+#     return np.linalg.norm(Y.T.dot(Y) - XX, 'fro') / normXX
 
 
-def strain_error(Y, XX, normXX):
-    # Compute the strain cost function error relative to norm of X^TX
-    return np.linalg.norm(Y.T.dot(Y) - XX, 'fro') / normXX
-
-
-def load_dataset(dataset_name, return_U=True, q=None):
+def load_dataset(dataset_name, return_U=True, K=None):
     '''
 
     Parameters
@@ -109,21 +108,14 @@ def load_dataset(dataset_name, return_U=True, q=None):
     X -= X.mean(0)[None, :]
 
     if return_U:
-        if q is None:
-            q = X.shape[-1]
+        if K is None:
+            K = X.shape[-1]
 
-        pca = PCA(n_components=q,svd_solver='arpack')
+        pca = PCA(n_components=K, svd_solver='arpack')
         pca.fit(X)
         U = pca.components_.T
         lam = pca.explained_variance_
         X = X.T
-        # X = X.T
-        # d, n = X.shape
-        # U,s,_ = np.linalg.svd(X, full_matrices=0)
-        # lam = s[:q]**2/n
-        # U = U[:,:q]
-
-
     else:
         U = 0
         lam = 0
@@ -132,7 +124,7 @@ def load_dataset(dataset_name, return_U=True, q=None):
     return X, U, lam
 
 
-def get_scale_data_factor(X, method='norm'):
+def get_scale_data_factor(X):
     ''' Scaling for convergence reasons
 
     Parameters
@@ -146,37 +138,27 @@ def get_scale_data_factor(X, method='norm'):
     -------
 
     '''
-    # center
-    # todo figure out why this works
-    if method is not None:
-        if method == 'norm':
-            log_fact = 1
-            norm_fact = np.mean(np.sqrt(np.sum(X ** 2, 0)))
-        else:
-            raise Exception('Scale data modality not known')
 
-        scale_factor = log_fact / norm_fact
-
-    else:
-        scale_factor = 1
+    norm_fact = np.mean(np.sqrt(np.sum(X ** 2, 0)))
+    scale_factor = 1 / norm_fact
 
     return scale_factor
 
 
-def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None, scale_data=False,
+def generate_samples(K=None, N=None, D=None, method='spiked_covariance', options=None, scale_data=True,
                      sample_with_replacement=False, shuffle=False):
     '''
     
     Parameters
     ----------
 
-    d: int or None
+    D: int or None
         number of features
     
-    q: int
+    K: int
         number of components
     
-    n: int or 'auto'
+    N: int or 'auto'
         number of samples, if 'auto' it will return all the samples from real data datasets
 
     method: str
@@ -199,7 +181,7 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
         U: ndarray
             ground truth eigenvectors
 
-        lam: ndarray
+        sigma2: ndarray
             ground truth eigenvalues
 
 
@@ -208,60 +190,59 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
     # here making sure that we use the right n when including n_test frames
 
     if method == 'spiked_covariance':
-        if n == 'auto':
-            raise ValueError('n cannot be "auto" for spiked_covariance model')
+        if N == 'auto':
+            raise ValueError('N cannot be "auto" for spiked_covariance model')
 
         if options is None:
             options = {
-                'lambda_q': 5e-1,
+                'lambda_K': 5e-1,
                 'normalize': True,
                 'rho': 1e-2 / 5,
                 'return_U': True
             }
         return_U = options['return_U']
 
-        if n is None or d is None:
-            raise Exception('Spiked covariance requires parameters n and d')
+        if N is None or D is None:
+            raise Exception('Spiked covariance requires parameters N and D')
 
         rho = options['rho']
         normalize = options['normalize']
         if normalize:
-            lambda_q = options['lambda_q']
-            sigma = np.sqrt(np.linspace(1, lambda_q, q))
+            lambda_K = options['lambda_K']
+            sigma = np.sqrt(np.linspace(1, lambda_K, K))
         else:
             slope = options['slope']
             gap = options['gap']
-            sigma = np.sqrt(gap + slope * np.arange(q - 1, -1, -1))
+            sigma = np.sqrt(gap + slope * np.arange(K - 1, -1, -1))
 
-        U, _ = np.linalg.qr(np.random.normal(0, 1, (d, q)))
+        U, _ = np.linalg.qr(np.random.normal(0, 1, (D, K)))
 
-        w = np.random.normal(0, 1, (q, n))
-        X = np.sqrt(rho) * np.random.normal(0, 1, (d, n))
+        w = np.random.normal(0, 1, (K, N))
+        X = np.sqrt(rho) * np.random.normal(0, 1, (D, N))
 
         X += U.dot((w.T * sigma).T)
-        lam = (sigma ** 2)[:, np.newaxis]
+        sigma2 = (sigma ** 2)[:, np.newaxis]
 
     elif method == 'real_data':
         if options is None:
             options = {
-                # 'filename': './datasets/ATT_faces_112_92.mat',
                 'filename': './datasets/ORL_32x32.mat',
                 'return_U': True
             }
         return_U = options['return_U']
         filename = options['filename']
 
-        X, U, lam = load_dataset(filename, return_U=return_U, q=q)
+        X, U, sigma2 = load_dataset(filename, return_U=return_U, K=K)
 
-        if n != 'auto':
-            if n > X.shape[-1]:
+        if N != 'auto':
+            if N > X.shape[-1]:
                 if sample_with_replacement:
                     print('** Warning: You are sampling real data with replacement')
                 else:
                     raise Exception("You are sampling real data with replacement "
                                     "but sample_with_replacement flag is set to False")
 
-            X = X[:, np.arange(n) % X.shape[-1]]
+            X = X[:, np.arange(N) % X.shape[-1]]
 
     else:
         assert 0, 'Specified method for data generation is not yet implemented!'
@@ -270,12 +251,13 @@ def generate_samples(q, n=None, d=None, method='spiked_covariance', options=None
     X -= X.mean(1)[:, None]
     if scale_data:
         scale_factor = get_scale_data_factor(X)
-        X, U, lam = X * scale_factor, U, lam * (scale_factor ** 2)
+        X, U, sigma2 = X * scale_factor, U, sigma2 * (scale_factor ** 2)
 
     if shuffle:
-        print('SHUFFLING DATA!!!')
+        print('Shuffling data!')
         X = X[:,np.random.permutation(X.shape[-1])]
+
     if return_U:
-        return X, U, lam
+        return X, U, sigma2
     else:
         return X
