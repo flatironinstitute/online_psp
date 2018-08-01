@@ -13,7 +13,6 @@ from util import subspace_error
 import time
 
 
-
 ##############################
 ##############################
 
@@ -81,8 +80,6 @@ class IF_minimax_PCA_CLASS:
         self.outer_W = np.empty_like(W)
         self.outer_Minv = np.empty_like(Minv)
 
-
-
     def fit_next(self, x):
 
         assert x.shape == (self.d,)
@@ -101,7 +98,6 @@ class IF_minimax_PCA_CLASS:
 
         # M <- M + eta(self.t)/tau * (y*y' - M), using SMW
         step = step / tau
-
         Minv = Minv / (1 - step)
         z = Minv.dot(y)
         c = step / (1 + step * np.dot(z, y))
@@ -113,9 +109,12 @@ class IF_minimax_PCA_CLASS:
 
         self.t += 1
 
-    def get_components(self):
+    def get_components(self, orthogonalize=True):
         '''
         Extract components from object
+
+        orthogonalize: bool
+            whether to orthogonalize when computing the error
 
         Returns
         -------
@@ -123,26 +122,38 @@ class IF_minimax_PCA_CLASS:
         '''
 
         components = np.asarray(self.Minv.dot(self.W).T)
+        if orthogonalize:
+            components, _ = np.linalg.qr(components)
+
         return components
 
 
-#%%
+# %%
 if __name__ == "__main__":
-#%%
+    # %%
     print('Testing IF_MINMAX_PROJECTION')
-    from util import generate_samples
+    from util import generate_samples, get_scale_data_factor
     import pylab as pl
 
     # Parameters
     n_epoch = 1
     tau = 0.5
-    d, q, n = 20, 5, 1000
-    X, U, sigma2 = generate_samples(d, q, n)
-    lambda_1 = np.random.normal(0, 1, (q,)) / np.sqrt(q)
-    Uhat0 = X[:, :q] / (X[:, :q] ** 2).sum(0)
+    q = 100
+    spiked_covariance_test = True
+    scale_data = True
+    if spiked_covariance_test:
+        d, n = 1000, 5000
+        X, U, sigma2 = generate_samples(q, n, d, method='spiked_covariance', scale_data=scale_data)
+
+    else:
+        X, U, sigma2 = generate_samples(q, n=None, d=None, method='real_data', scale_data=scale_data)
+        d, n = X.shape
+    # adjust eigenvalues magnitude according to how data is scaled
+    lambda_1 = np.abs(np.random.normal(0, 1, (q,))) / np.sqrt(q)
+    Uhat0 = X[:, :q] / np.sqrt((X[:, :q] ** 2).sum(0))
     # %%
     errs = []
-    if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=X[:, :q].T, Minv0=None, tau=tau)
+    if_mm_pca = IF_minimax_PCA_CLASS(q, d, W0=Uhat0.T, Minv0=None, tau=tau)
     time_1 = time.time()
     for n_e in range(n_epoch):
         for x in X.T:
