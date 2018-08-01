@@ -104,20 +104,6 @@ def run_simulation(simulation_options, generator_options, algorithm_options):
     if error_options['compute_batch_error']:
         error_options['error_func_list'].append(('batch_err', lambda Uhat: util.subspace_error(Uhat, U_batch)))
 
-
-    if error_options['compute_reconstruction_error']:
-        Xtest      = X
-        normsXtest = np.sum(np.abs(Xtest) ** 2, 0) ** 0.5
-
-        # TODO: allow in-sample testing? does this even work anymore
-        error_options['error_func_list'].append(
-            ('recon_err', lambda Uhat: util.reconstruction_error(Uhat, Xtest, normsXtest)))
-
-    if error_options['compute_proj_error']:
-        error_options['error_func_list'].append(
-            ('proj_err', lambda Uhat: util.proj_error(Uhat, U_batch)))
-
-
     if pca_init:
         # Initialize using pca_init number of data points
         N0 = pca_init

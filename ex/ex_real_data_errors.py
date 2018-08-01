@@ -1,9 +1,10 @@
-# Title: error_performance_spiked_covariance.py
-# Description: Testing online PCA algorithm population and batch error on artificially generated data
+# Title: ex_real_data_errors.py
+# Description: Testing online PSP algorithm population and batch error on artificially generated data
 # Author: Victor Minden (vminden@flatironinstitute.org) and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
 # Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
-# %%
+
+
 # imports
 from online_psp.online_psp_simulations import run_simulation
 import os
@@ -12,17 +13,15 @@ import numpy as np
 import psutil
 import multiprocessing
 import matplotlib
+
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
 # general parameters
-
 error_options = {
     'n_skip': 50,
-    'orthogonalize_iterate': False,
     'compute_batch_error': True,
     'compute_population_error': True,
-    'compute_strain_error': False,
     'compute_reconstruction_error': False
 }
 
@@ -33,40 +32,33 @@ generator_options = {
 }
 
 simulation_options = {
-        'd': None,
-        'q': 16,
-        'n': 'auto',  # can set a number here, will select frames multiple times
-        'n0': 0,
-        'error_options': error_options,
-        'pca_init': False,
-        'init_ortho': True,
+    'D': None,
+    'K': 16,
+    'N': 'auto',  # can set a number here, will select frames multiple times
+    'N0': 0,
+    'error_options': error_options,
+    'pca_init': False,
+    'init_ortho': True,
 }
 
 
-# algos = ['if_minimax_PCA', 'CCIPCA']
-
-# algo = algos[0]
 algorithm_options = {
-    # 'pca_algorithm': algo,
+    'pca_algorithm': None,
     'tau': 0.5,
     'tol': 1e-7,
 }
 
 
-
-# %%
 def run_test(simulation_options=None, algorithm_options=None, generator_options=None):
     '''function running each iteration of a test
     '''
-    output_folder = os.getcwd() + '/test'
-
-    errs = run_simulation(output_folder, simulation_options,
+    errs = run_simulation(simulation_options,
                           generator_options, algorithm_options)
 
     return errs
 
 
-# %%
+
 def run_test_wrapper(params):
     ''' Function to parallelize on multiple repetitions os the same simulation
 
@@ -79,52 +71,43 @@ def run_test_wrapper(params):
 
     '''
     generator_options, simulation_options, algorithm_options, data_fold, n_repetitions = params
-    errs_pop = []
     errs_batch = []
-    #errs_recon = []
     for _ in range(n_repetitions):
-        err = run_test(generator_options=generator_options, simulation_options=simulation_options,
-                       algorithm_options=algorithm_options)
-        errs_pop.append(err['population_err'])
+        err = run_test(simulation_options, algorithm_options, generator_options, )
         errs_batch.append(err['batch_err'])
-        # errs_recon.append(err['recon_err'])
 
-    errs_pop = np.array(errs_pop)
     errs_batch = np.array(errs_batch)
-    #errs_recon = np.array(errs_recon)
 
     output_dict = {
         'generator_options': generator_options,
         'simulation_options': simulation_options,
         'algorithm_options': algorithm_options,
-        'd': simulation_options['d'],
-        'q': simulation_options['q'],
-        'n': simulation_options['n'],
+        'D': simulation_options['D'],
+        'K': simulation_options['K'],
+        'N': simulation_options['N'],
         'filename': generator_options['filename'],
         'n_epoch': simulation_options['n_epoch'],
-        'n0': 0,
-        # TODO these were swapped
-        'population_err': errs_pop,
+        'N0': 0,
         'batch_err': errs_batch,
-     #   'recon_err': errs_recon
+
     }
-    d = simulation_options['d']
-    q = simulation_options['q']
+    # d = simulation_options['d']
+    K = simulation_options['K']
     filename = generator_options['filename']
     algo = algorithm_options['pca_algorithm']
     save_name = os.path.join(data_fold,
-                             '__'.join(['fname', filename.split('/')[-1], 'q', str(q), 'algo', algo]) + '.npz')
+                             '__'.join(['fname', filename.split('/')[-1], 'K', str(K), 'algo', algo]) + '.npz')
     print('Saving in:' + save_name)
-    np.savez(
-        save_name,
-        **output_dict)
+    np.savez(save_name, **output_dict)
 
-    return errs_pop, errs_batch#, errs_recon
+    return errs_batch
 
 
-# %% parameters figure generation
+
+#####################
+# parameters figure generation
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
-rerun_simulation = False  # whether to rerun from scratch or just show the results
+rerun_simulation = True  # whether to rerun from scratch or just show the results
 parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
 # %% start cluster
 if parallelize:
@@ -151,49 +134,46 @@ if parallelize:
 # %%
 all_pars = []
 
-for t_ in  [0.5, 0.6, 1.5, 2]:# [0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
-    algorithm_options['t'] = t_
+for gamma_ in  [0.5, 0.6, 1.5, 2]:
+    algorithm_options['gamma'] = gamma_
     # %%
-    data_fold = os.path.abspath('./real_data_learning_curves_t_' + str(t_))
+    data_fold = os.path.abspath('./real_data_learning_curves_gamma_' + str(gamma_))
+    os.makedirs(data_fold, exist_ok=True)
     #redundant but there for flexibility
-    #TODO fix me
-    names = ['USEDTOBEORL','YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat'][:]
-    n_epochs = [30, 10, 30, 1][:]
-    qs = [16, 64, 128, 256][:3]
+    names = ['YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat']
+    n_epochs = [10, 30, 1]
+    Ks = [16, 64, 128]
 
-    if t_ == 0.5:
-        algos = ['incremental_PCA', 'CCIPCA']
+    if gamma_ == 0.5:
+        algos = ['IPCA', 'CCIPCA']
     else:
-        algos = ['if_minimax_PCA']
+        algos = ['FSM']
 
     colors = ['b', 'r', 'g']
     n_repetitions = 10
 
-    simulation_options['n'] = 'auto'
+    simulation_options['N'] = 'auto'
     plot = not parallelize
-    if rerun_simulation:
-        os.makedirs(data_fold, exist_ok=True)
-    else:
-        1
-        #plt.figure()
-    counter_q = 0
 
-    for q in qs:
+    counter_K = 0
+
+    for K in Ks:
 
         counter_name = 0
         for n_ep, name in zip(n_epochs, names):
             simulation_options['n_epoch'] = n_ep
             counter_name += 1
-            generator_options['filename'] = './datasets/' + name
+            generator_options['filename'] = '../datasets/' + name
+
             if not parallelize:
-                ax = plt.subplot(len(qs), len(names), len(names)*counter_q + counter_name)
+                ax = plt.subplot(len(Ks), len(names), len(names) * counter_K + counter_name)
 
             for algo, algor in enumerate(algos):
                 print(name)
 
                 algorithm_options['pca_algorithm'] = algor
-                print((name, q))
-                simulation_options['q'] = q
+                print((name, K))
+                simulation_options['K'] = K
                 all_pars.append(
                     [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold[:],
                      n_repetitions])
@@ -202,32 +182,31 @@ for t_ in  [0.5, 0.6, 1.5, 2]:# [0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]:
                     batch_err_avg = None
                 else:
                     if rerun_simulation:
-                        errs_pop, errs_batch = run_test_wrapper(all_pars[-1])
+                        errs_batch = run_test_wrapper(all_pars[-1])
                         batch_err_avg = np.median(errs_batch, 0)
                     else:
                         fname = os.path.join(data_fold, '__'.join(
-                            ['fname',name, 'q', str(q), 'algo', algor]) + '.npz')
-                        # fname = os.path.join(data_fold, '__'.join(
-                        #     ['rho',str(rho), 'd', str(d), 'q', str(q), 'algo', algos[algo]]) + '.npz')
+                            ['fname', name, 'K', str(K), 'algo', algor]) + '.npz')
+
                         with np.load(fname) as ld:
                             batch_err_avg = np.median(ld['batch_err'][()], 0)
 
                 if batch_err_avg is not None:
-                    plt.title('k=' + str(q)+','+ name)
+                    plt.title('k=' + str(K) + ',' + name)
                     line_bat, = ax.loglog(batch_err_avg.T)
-                    line_bat.set_label('t_'+str(t_)+ ',' + algos[algo])
+                    line_bat.set_label('gamma_' + str(gamma_) + ',' + algos[algo])
                     plt.ylabel('subspace error')
                     plt.pause(.1)
 
 
             plt.show()
-        counter_q += 1
+        counter_K += 1
 
     if batch_err_avg is not None:
         ax.legend()
         plt.xlabel('sample')
         plt.show()
-        plt.pause(3)
+
 
 if parallelize:
     all_res = dview.map(run_test_wrapper, all_pars)

@@ -20,15 +20,6 @@ def compute_errors(error_options, Uhat, t, errs, M=None):
     for i, (fname, f) in enumerate(error_options['error_func_list']):
         errs[fname][t] = f(Uhat)
 
-def proj_error(Uhat, U, relative_error_flag=True):
-    K_true = U.shape[1]
-    A = Uhat.T.dot(U)
-    err = np.linalg.norm(U - Uhat.dot(A))
-    if relative_error_flag:
-        err = err / np.sqrt(K_true)
-    return err
-
-
 
 def initialize_errors(error_options, n_its):
     # Build a dictionary for storing the error information for each specified error function
@@ -124,7 +115,7 @@ def get_scale_data_factor(X):
 
 
 def generate_samples(K=None, N=None, D=None, method='spiked_covariance', options=None, scale_data=True,
-                     sample_with_replacement=False, shuffle=False):
+                     sample_with_replacement=False, shuffle=False, return_scaling=False):
     '''
     
     Parameters
@@ -226,16 +217,25 @@ def generate_samples(K=None, N=None, D=None, method='spiked_covariance', options
         assert 0, 'Specified method for data generation is not yet implemented!'
 
     # center data
-    X -= X.mean(1)[:, None]
+    avg = X.mean(1)[:, None]
+    X -= avg
     if scale_data:
         scale_factor = get_scale_data_factor(X)
         X, U, sigma2 = X * scale_factor, U, sigma2 * (scale_factor ** 2)
+    else:
+        scale_factor = 1
 
     if shuffle:
         print('Shuffling data!')
         X = X[:,np.random.permutation(X.shape[-1])]
 
-    if return_U:
-        return X, U, sigma2
+    if return_scaling:
+        if return_U:
+            return X, U, sigma2, avg, scale_factor
+        else:
+            return X, avg, scale_factor
     else:
-        return X
+        if return_U:
+            return X, U, sigma2
+        else:
+            return X
