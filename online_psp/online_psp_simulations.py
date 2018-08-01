@@ -9,19 +9,19 @@
 ##############################
 # Imports
 import numpy as np
-
-import util
 import time
 
-from fast_similarity_matching import FSM
-from ccipca import CCIPCA
-from incremental_pca import IPCA
-from similarity_matching import SM
+import online_psp.util as util
+from online_psp.fast_similarity_matching import FSM
+from online_psp.ccipca import CCIPCA
+from online_psp.incremental_pca import IPCA
+from online_psp.similarity_matching import SM
 
 from sklearn.decomposition import PCA
 
 from collections import defaultdict
-from matplotlib import pyplot as plt
+
+
 
 
 ##############################
@@ -123,10 +123,13 @@ def run_simulation(simulation_options, generator_options, algorithm_options):
         N0 = pca_init
         U, s, V = np.linalg.svd(X[:, :pca_init], full_matrices=False)
         Uhat0 = U[:, :K]
-    else:
+    elif N >= K:
         # Initialize using just the first data point and the rest random
         N0 = 0
         Uhat0 = X[:, :K] / np.sqrt((X[:, :K] ** 2).sum(0))
+    else:
+        N0 = 0
+        Uhat0 = np.random.normal(loc=0, scale=1 / D, size=(D, K))
 
     if init_ortho:
         # Optionally orthogonalize the initial guess
@@ -203,90 +206,6 @@ def run_simulation(simulation_options, generator_options, algorithm_options):
         return t.interval
 
 
-def run_test(simulation_options=None, algorithm_options=None, generator_options=None):
-    error_options = defaultdict(int, simulation_options['error_options'])
-    compute_error = any(error_options)
-
-    errs = run_simulation(simulation_options, generator_options, algorithm_options)
-
-    handles = []
-    if compute_error:
-        fig = plt.figure(1)
-        plt.title(algorithm_options['pca_algorithm'])
-
-        for err_name in errs:
-            err = errs[err_name]
-            err = err[err > 0]
-            print(err_name + ': %e' % (err[-1]))
-            plt.loglog(err, label=err_name)
-
-        plt.legend()
-        plt.ylabel('Error (log10 scale)')
-        plt.xlabel('Iteration (x n_skip)')
-
-        plt.show()
 
 
 
-if __name__ == "__main__":
-
-    error_options = {
-        'n_skip': 64,
-        'compute_batch_error': True,
-        'compute_population_error': True,
-        'compute_reconstruction_error': False,
-    }
-
-    spiked_covariance = True
-    scale_data        = True
-
-    if spiked_covariance:
-        generator_options = {
-            'method': 'spiked_covariance',
-            'lambda_K': 5e-1,
-            'normalize': True,
-            'rho': 1e-2 / 5,
-            'scale_data': scale_data,
-            'shuffle': False
-        }
-
-        simulation_options = {
-            'D': 100,
-            'K': 20,
-            'N': 5000,
-            'N0': 0,
-            'n_epoch': 1,
-            'error_options': error_options,
-            'pca_init': False,
-            'init_ortho': True
-        }
-    else:
-        # Use real data
-        dsets = ['ATT_faces_112_92.mat', 'YaleB_32x32.mat', 'MNIST.mat']
-        dset = dsets[1]
-        print('** ' + dset)
-        generator_options = {
-            'method': 'real_data',
-            'filename': './datasets/' + dset,
-            'scale_data': scale_data,
-            'shuffle': False
-        }
-        simulation_options = {
-            'D': None,
-            'K': 16,
-            'N': 'auto',  # can set a number here, will sample with replacement if needed
-            'N0': 0,
-            'n_epoch': 50,
-            'error_options': error_options,
-            'pca_init': False,
-            'init_ortho': True,
-        }
-
-    algos = ['FSM', 'IPCA', 'CCIPCA', 'SM']
-    algo = algos[0]
-
-    algorithm_options = {
-        'pca_algorithm': algo
-    }
-    run_test(generator_options=generator_options, simulation_options=simulation_options,
-             algorithm_options=algorithm_options)

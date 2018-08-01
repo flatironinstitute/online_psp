@@ -10,5 +10,5 @@ from distutils.core import setup
 from Cython.Build import cythonize
 
 setup(
-    ext_modules=cythonize("coord_update.pyx"),
+    ext_modules=cythonize("online_psp/coord_update.pyx"),
 )
