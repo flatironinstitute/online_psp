@@ -6,7 +6,7 @@ A suite of computationally efficient algorithms for online subspace learning and
 Install cython
 
 ```bash
-python online_psp/setup.py build_ext --inplace
+python setup.py build_ext --inplace
 ```
 TODO is this weird
 Add the parent directory of online_psp to your python path.
