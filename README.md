@@ -22,7 +22,7 @@ The `online_psp` module contains implementations of four different algorithms
 for streaming principal subspace projection:
 
 - Incremental PCA (IPCA) [3]
-- Candid, Covariance-free IPCA [4]
+- Candid, Covariance-free IPCA (CCIPCA) [4]
 - Similarity Matching (SM) [1]
 - Fast Similarity Matching (FSM) [6]
 
