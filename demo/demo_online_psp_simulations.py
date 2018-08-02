@@ -31,8 +31,7 @@ def run_test(simulation_options=None, algorithm_options=None, generator_options=
 error_options = {
     'n_skip': 64,
     'compute_batch_error': True,
-    'compute_population_error': True,
-    'compute_reconstruction_error': False,
+    'compute_population_error': True
 }
 
 spiked_covariance = True

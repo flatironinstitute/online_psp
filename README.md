@@ -4,7 +4,7 @@
 
 ## Installation 
 The module can be installed by adding the parent directory
-of online_psp to the Python path 
+of `online_psp` to the Python path 
 and compiling the Cython portion by running
 
 ```bash
@@ -31,8 +31,35 @@ with accompanying demos in the `demo` folder, e.g., `online_psp/fast_similarity_
 
 The examples from the accompanying paper [6] are found in the `ex` directory.  These can take a long time to run.
 
+Briefly, each algorithm is implemented as a class with a `fit_next` method that
+takes an additional data point and updates the estimate of the principal subspace.  
+For example, given a data matrix `X` as a numpy array of size `(N,D)` consisting of `N` data points of size `D`, we can run
 
-### Documentation
+```python
+from online_psp.fast_similarity_matching import FSM
+
+fsm = FSM(K, D)
+
+# Fit subspace
+for x in X:
+    fsm.fit_next(x)
+# Get vectors spanning subspace
+U = fsm.get_components()
+```
+
+While there are various heuristic initialization schemes implemented for each class, it is typically better to specific initialization, see the demos.
+
+### Test suite documentation
+The files `online_psp/online_psp_simulations.py` and `online_psp/util.py` implement a simple framework for 
+evaluating the different algorithms by running them on both simulated data and real data in various configurations,
+see `demo/demo_online_psp_simulations.py` for a demo.  Essentially, `online_psp/online_psp_simulations.py` 
+contains a driver method
+
+```python
+run_simulation(simulation_options, generator_options, algorithm_options)
+```
+
+where each parameter is a dictionary of specified options used to guide the simulation, the data generation, and the algorithm.
 
 ```python
 print('hello world')
