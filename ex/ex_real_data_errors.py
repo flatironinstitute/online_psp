@@ -46,25 +46,12 @@ algorithm_options = {
 
 
 def run_test(simulation_options=None, algorithm_options=None, generator_options=None):
-    '''function running each iteration of a test
-    '''
     errs = run_simulation(simulation_options, generator_options, algorithm_options)
     return errs
 
 
 
 def run_test_wrapper(params):
-    ''' Function to parallelize on multiple repetitions os the same simulation
-
-    Parameters
-    ----------
-    params
-
-    Returns
-    -------
-
-    '''
-
     generator_options, simulation_options, algorithm_options, data_fold, n_repetitions = params
     errs_batch = []
     for _ in range(n_repetitions):

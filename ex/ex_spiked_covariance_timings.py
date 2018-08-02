@@ -58,7 +58,7 @@ results = {}
 
 ax = plt.subplot(1, 1, 1)
 
-# TODO: fix
+# TODO: there is certainly a better way to do this
 filename = './timings/blah.blah'
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 
@@ -94,7 +94,7 @@ for algo in range(len(algos)):
     line_timing.set_label(algos[algo])
 
 Ks = np.array(Ks)
-# TODO These had better be tuned for pretty plots
+# TODO: these could be auto-scaled at some point in the future
 ax.plot(Ks, Ks / 5e4, '--r')
 ax.plot(Ks, Ks ** 2 / 2e5, '--r')
 ax.legend()

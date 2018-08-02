@@ -2,8 +2,6 @@
 # Description: Various utilities useful for online PSP tests
 # Author: Victor Minden (vminden@flatironinstitute.org) and Andrea Giovannucci (agiovannucci@flatironinstitute.org)
 
-#TODO: comments and docstrings
-
 ##############################
 # Imports
 import numpy as np
@@ -13,7 +11,16 @@ from sklearn.decomposition import PCA
 
 ##############################
 
-def compute_errors(error_options, Uhat, t, errs, M=None):
+def compute_errors(error_options, Uhat, t, errs):
+    """
+    Parameters:
+    ====================
+    error_options -- A struct of error options
+    Uhat          -- The approximation Uhat of an orthonormal basis for the PCA subspace of size D by K
+    t             -- The current iteration index
+    errs          -- An output dict in which to put the computed errs
+
+    """
     if t % error_options['n_skip']:
         return
 
@@ -22,7 +29,7 @@ def compute_errors(error_options, Uhat, t, errs, M=None):
 
 
 def initialize_errors(error_options, n_its):
-    # Build a dictionary for storing the error information for each specified error function
+    """ Build a dictionary for storing the error information for each specified error function"""
     return {fun_name: np.zeros(n_its) for (fun_name, _) in error_options['error_func_list']}
 
 
@@ -32,6 +39,7 @@ def subspace_error(Uhat, U, relative_error_flag=True):
     ====================
     Uhat -- The approximation Uhat of an orthonormal basis for the PCA subspace of size D by K
     U    -- An orthonormal basis for the PCA subspace of size D by K
+    relative_error_flag -- A flag saying whether to scale the error to put it on a relative scale
 
     Output:
     ====================
@@ -139,6 +147,12 @@ def generate_samples(K=None, N=None, D=None, method='spiked_covariance', options
     scale_data: bool
         scaling data so that average sample norm is one
 
+    shuffle: bool
+        whether to shuffle the data or not
+
+    return_scaling: bool
+        true if we want to get two additional output arguments, the centering and scaling
+
 
 
 
@@ -152,6 +166,12 @@ def generate_samples(K=None, N=None, D=None, method='spiked_covariance', options
 
         sigma2: ndarray
             ground truth eigenvalues
+
+        avg: ndarray
+            mean of X (only sometimes returned)
+
+        scale_factor: float
+            the amount by which the data was scaled (only sometimes returned)
 
 
     '''

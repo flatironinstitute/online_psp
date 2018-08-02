@@ -17,24 +17,12 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def run_test(simulation_options=None, algorithm_options=None, generator_options=None):
-    '''function running each iteration of a test
-    '''
     errs = run_simulation(simulation_options,
                           generator_options, algorithm_options)
     return errs
 
 
 def run_test_wrapper(params):
-    ''' Function to parallelize on multiple repetitions os the same simulation
-
-    Parameters
-    ----------
-    params
-
-    Returns
-    -------
-
-    '''
     generator_options, simulation_options, algorithm_options, data_fold, n_repetitions = params
     errs_pop = []
     errs_batch = []
@@ -76,9 +64,7 @@ def run_test_wrapper(params):
 
 
 ###############################
-
-# TODO fix
-n_repetitions = 1 #10
+n_repetitions = 10
 
 # general parameters
 
@@ -127,10 +113,9 @@ for gamma_ in gammas_:
     algorithm_options['gamma'] = gamma_
     # %% vary k
     D_K_params = [(256, 16), (256, 128), (2048, 16), (2048, 128)]
-    # TODO THIS FOLDER GENERATING IS A DISASTER
     data_fold = os.path.abspath('./errors_spiked_cov_vary_k_d_gamma_' + str(gamma_))
-    #TODO  What is this...
-    if gamma_ == gammas_[0]: # run for IPCA AND CCIPCA only onthe first iteration
+
+    if gamma_ == gammas_[0]:
         algos = ['FSM', 'IPCA', 'CCIPCA']
     else:
         algos = ['FSM']

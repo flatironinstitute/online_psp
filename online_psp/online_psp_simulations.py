@@ -4,8 +4,6 @@
 # Notes: Adapted from code by Andrea Giovannucci
 # Reference: None
 
-#TODO COMMENTS
-
 ##############################
 # Imports
 import numpy as np
@@ -39,12 +37,7 @@ class Timer:
 
 
 def run_simulation(simulation_options, generator_options, algorithm_options):
-    # Different types of error to compute:
-    # - The relative Frobenius norm error ||UU' - UhatUhat'||_F / K, relative to either the population PCA or the sample PCA
-    # - The relative strain cost function (on some test data)  ||X'X - Y'Y||_F / ||X'X||_F
-
     # Unpack some parameters
-    # TODO: default values
     D = simulation_options['D']
     K = simulation_options['K']
     N = simulation_options['N']
@@ -110,10 +103,11 @@ def run_simulation(simulation_options, generator_options, algorithm_options):
         U, s, V = np.linalg.svd(X[:, :pca_init], full_matrices=False)
         Uhat0 = U[:, :K]
     elif N >= K:
-        # Initialize using just the first data point and the rest random
+        # Initialize using the first K data points
         N0 = 0
         Uhat0 = X[:, :K] / np.sqrt((X[:, :K] ** 2).sum(0))
     else:
+        # Random init
         N0 = 0
         Uhat0 = np.random.normal(loc=0, scale=1 / D, size=(D, K))
 
