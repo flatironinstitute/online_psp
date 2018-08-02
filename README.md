@@ -49,7 +49,7 @@ U = fsm.get_components()
 
 While there are various heuristic initialization schemes implemented for each class, it is typically better to specific initialization, see the demos.
 
-### Test suite documentation
+### Test suite
 The files `online_psp/online_psp_simulations.py` and `online_psp/util.py` implement a simple framework for 
 evaluating the different algorithms by running them on both simulated data and real data in various configurations,
 see `demo/demo_online_psp_simulations.py` for a demo.  Essentially, `online_psp/online_psp_simulations.py` 
@@ -60,12 +60,8 @@ run_simulation(simulation_options, generator_options, algorithm_options)
 ```
 
 where each parameter is a dictionary of specified options used to guide the simulation, the data generation, and the algorithm.
-
-```python
-print('hello world')
-```
-
-### Options
+The primary purpose of these methods are to ease reproduction of the results in the accompanying paper [6] (see `ex` directory),
+but they are also easily extensible to incorporate, e.g., other algorithms one might want to test.
 
 
 ## Data acknowledgments
