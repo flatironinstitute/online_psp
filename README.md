@@ -47,7 +47,7 @@ for x in X:
 U = fsm.get_components()
 ```
 
-While there are various heuristic initialization schemes implemented for each class, it is typically better to specific initialization, see the demos.
+While there are various heuristic initialization schemes implemented for each class, it is typically better to specify initialization, see the demos.
 Additionally, if the default learning rates are used then we find it useful to scale the data such that the average L2 norm of a data point is one.
 To aid in this, we provide a method `get_scale_data_factor` in `online_psp/util.py`
 
