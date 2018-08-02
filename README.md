@@ -52,7 +52,7 @@ The following example datasets have been included in this package.
 ## References
 [1] Pehlevan, C., Sengupta, A. and Chklovskii, D.B. "Why do similarity matching objectives lead to Hebbian/anti-Hebbian networks?." Neural computation 30, no. 1 (2018): 84-124.
 
-[2] Cardot, H, and Degras, D. "Online Principal Component Analysis in High Dimension: Which Algorithm to Choose?." arXiv preprint arXiv:1511.03688 (2015).
+[2] Cardot, H., and Degras, D. "Online Principal Component Analysis in High Dimension: Which Algorithm to Choose?." arXiv preprint arXiv:1511.03688 (2015).
 
 [3] Arora, R., Cotter, A., Livescu, K. and Srebro, N., 2012, October. Stochastic optimization for PCA and PLS. In Communication, Control, and Computing (Allerton), 2012 50th Annual Allerton Conference on (pp. 861-868). IEEE.
 
