@@ -33,7 +33,7 @@ The examples from the accompanying paper [6] are found in the `ex` directory.  T
 
 Briefly, each algorithm is implemented as a class with a `fit_next` method that
 takes an additional data point and updates the estimate of the principal subspace.  
-For example, given a data matrix `X` as a numpy array of size `(N,D)` consisting of `N` data points of size `D`, we can run
+For example, given a centered data matrix `X` as a numpy array of size `(N,D)` consisting of `N` data points of size `D`, we can get an estimate of the `K`-dimensional principal subspace via
 
 ```python
 from online_psp.fast_similarity_matching import FSM
@@ -48,6 +48,9 @@ U = fsm.get_components()
 ```
 
 While there are various heuristic initialization schemes implemented for each class, it is typically better to specific initialization, see the demos.
+Additionally, if the default learning rates are used then we find it useful to scale the data such that the average L2 norm of a data point is one.
+To aid in this, we provide a method `get_scale_data_factor` in `online_psp/util.py`
+
 
 ### Test suite
 The files `online_psp/online_psp_simulations.py` and `online_psp/util.py` implement a simple framework for 
