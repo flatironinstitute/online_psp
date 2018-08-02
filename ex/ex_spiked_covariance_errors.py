@@ -204,6 +204,6 @@ for gamma_ in gammas_:
 
         ax = plt.subplot(len(D_K_params), 2, 2 * counter + 2)
         ax.legend()
-    plt.savefig('./errors/d_%d.png' % (D))
+    plt.savefig('./d_%d.png' % (D))
     plt.show()
 

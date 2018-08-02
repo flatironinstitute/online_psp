@@ -10,8 +10,6 @@ from online_psp.online_psp_simulations import run_simulation
 import os
 import pylab as plt
 import numpy as np
-import psutil
-import multiprocessing
 import matplotlib
 
 matplotlib.rcParams['pdf.fonttype'] = 42
@@ -44,17 +42,13 @@ simulation_options = {
 
 algorithm_options = {
     'pca_algorithm': None,
-    'tau': 0.5,
-    'tol': 1e-7,
 }
 
 
 def run_test(simulation_options=None, algorithm_options=None, generator_options=None):
     '''function running each iteration of a test
     '''
-    errs = run_simulation(simulation_options,
-                          generator_options, algorithm_options)
-
+    errs = run_simulation(simulation_options, generator_options, algorithm_options)
     return errs
 
 
@@ -70,6 +64,7 @@ def run_test_wrapper(params):
     -------
 
     '''
+
     generator_options, simulation_options, algorithm_options, data_fold, n_repetitions = params
     errs_batch = []
     for _ in range(n_repetitions):
@@ -77,7 +72,6 @@ def run_test_wrapper(params):
         errs_batch.append(err['batch_err'])
 
     errs_batch = np.array(errs_batch)
-
     output_dict = {
         'generator_options': generator_options,
         'simulation_options': simulation_options,
@@ -91,7 +85,6 @@ def run_test_wrapper(params):
         'batch_err': errs_batch,
 
     }
-    # d = simulation_options['d']
     K = simulation_options['K']
     filename = generator_options['filename']
     algo = algorithm_options['pca_algorithm']
@@ -103,49 +96,24 @@ def run_test_wrapper(params):
     return errs_batch
 
 
-
 #####################
 # parameters figure generation
 rhos = np.logspace(-4, -0.5, 10)  # controls SNR
 rerun_simulation = True  # whether to rerun from scratch or just show the results
-parallelize = np.logical_and(rerun_simulation, True)  # whether to use parallelization or to show results on the go
-# %% start cluster
-if parallelize:
-    n_processes = np.maximum(np.int(psutil.cpu_count()/2), 1)
-    if len(multiprocessing.active_children()) > 0:
-        try:
-            dview.terminate()
-        except:
-            raise Exception('A cluster is already runnning. Terminate with dview.terminate() if you want to restart.')
-    else:
-        try:
-            if 'kernel' in get_ipython().trait_names():  # If you're on OSX and you're running under Jupyter or Spyder,
-                # which already run the code in a forkserver-friendly way, this
-                # can eliminate some setup and make this a reasonable approach.
-                # Otherwise, seting VECLIB_MAXIMUM_THREADS=1 or using a different
-                # blas/lapack is the way to avoid the issues.
-                # See https://github.com/flatironinstitute/CaImAn/issues/206 for more
-                # info on why we're doing this (for now).
-                multiprocessing.set_start_method('forkserver', force=True)
-        except:  # If we're not running under ipython, don't do anything.
-            pass
 
-        dview = multiprocessing.Pool(n_processes)
-# %%
 all_pars = []
+gammas = [0.6, 1.5, 2]
 
-for gamma_ in  [0.5, 0.6, 1.5, 2]:
+for gamma_ in  gammas:
     algorithm_options['gamma'] = gamma_
-    # %%
     data_fold = os.path.abspath('./real_data_learning_curves_gamma_' + str(gamma_))
     os.makedirs(data_fold, exist_ok=True)
-    #redundant but there for flexibility
     names = ['YaleB_32x32.mat','ATT_faces_112_92.mat', 'MNIST.mat']
     n_epochs = [10, 30, 1]
     Ks = [16, 64, 128]
 
-    if gamma_ == 0.5:
-        algos = ['IPCA', 'CCIPCA']
+    if gamma_ == gammas[0]:
+        algos = ['FSM', 'IPCA', 'CCIPCA']
     else:
         algos = ['FSM']
 
@@ -153,20 +121,15 @@ for gamma_ in  [0.5, 0.6, 1.5, 2]:
     n_repetitions = 10
 
     simulation_options['N'] = 'auto'
-    plot = not parallelize
 
-    counter_K = 0
-
-    for K in Ks:
-
+    for counter_K, K in enumerate(Ks):
         counter_name = 0
         for n_ep, name in zip(n_epochs, names):
             simulation_options['n_epoch'] = n_ep
             counter_name += 1
             generator_options['filename'] = '../datasets/' + name
 
-            if not parallelize:
-                ax = plt.subplot(len(Ks), len(names), len(names) * counter_K + counter_name)
+            ax = plt.subplot(len(Ks), len(names), len(names) * counter_K + counter_name)
 
             for algo, algor in enumerate(algos):
                 print(name)
@@ -178,39 +141,28 @@ for gamma_ in  [0.5, 0.6, 1.5, 2]:
                     [generator_options.copy(), simulation_options.copy(), algorithm_options.copy(), data_fold[:],
                      n_repetitions])
 
-                if parallelize:
-                    batch_err_avg = None
+                if rerun_simulation:
+                    errs_batch = run_test_wrapper(all_pars[-1])
+                    batch_err_avg = np.median(errs_batch, 0)
+                    batch_err_avg = batch_err_avg[batch_err_avg > 0]
                 else:
-                    if rerun_simulation:
-                        errs_batch = run_test_wrapper(all_pars[-1])
-                        batch_err_avg = np.median(errs_batch, 0)
-                    else:
-                        fname = os.path.join(data_fold, '__'.join(
-                            ['fname', name, 'K', str(K), 'algo', algor]) + '.npz')
+                    fname = os.path.join(data_fold, '__'.join(
+                        ['fname', name, 'K', str(K), 'algo', algor]) + '.npz')
 
-                        with np.load(fname) as ld:
-                            batch_err_avg = np.median(ld['batch_err'][()], 0)
+                    with np.load(fname) as ld:
+                        batch_err_avg = np.median(ld['batch_err'][()], 0)
+                        batch_err_avg = batch_err_avg[batch_err_avg > 0]
 
                 if batch_err_avg is not None:
                     plt.title('k=' + str(K) + ',' + name)
                     line_bat, = ax.loglog(batch_err_avg.T)
                     line_bat.set_label('gamma_' + str(gamma_) + ',' + algos[algo])
                     plt.ylabel('subspace error')
-                    plt.pause(.1)
 
 
-            plt.show()
-        counter_K += 1
+if batch_err_avg is not None:
+    ax.legend()
+    plt.xlabel('sample (x n_skip)')
+    plt.savefig('./real_data.png')
+    plt.show()
 
-    if batch_err_avg is not None:
-        ax.legend()
-        plt.xlabel('sample')
-        plt.show()
-
-
-if parallelize:
-    all_res = dview.map(run_test_wrapper, all_pars)
-
-    # %% stop cluster
-if parallelize:
-    dview.terminate()
